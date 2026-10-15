@@ -1,0 +1,2230 @@
+{
+  "source": "GladysAssistant/Gladys master 03d4696d (server/utils/constants.js, front/src/utils/consts.js, front i18n), generated 2026-10-09",
+  "categories": [
+    "air-conditioning",
+    "airquality-sensor",
+    "angle-sensor",
+    "battery",
+    "battery-low",
+    "battery-storage",
+    "button",
+    "camera",
+    "charging-station",
+    "child-lock",
+    "co-sensor",
+    "co2-sensor",
+    "counter-sensor",
+    "cube",
+    "currency",
+    "curtain",
+    "data",
+    "datarate",
+    "device-temperature-sensor",
+    "distance-sensor",
+    "doorbell",
+    "duration",
+    "electrical-vehicle-battery",
+    "electrical-vehicle-charge",
+    "electrical-vehicle-climate",
+    "electrical-vehicle-command",
+    "electrical-vehicle-consumption",
+    "electrical-vehicle-drive",
+    "electrical-vehicle-state",
+    "energy-production-sensor",
+    "energy-sensor",
+    "fan",
+    "formaldehyd-sensor",
+    "grid-carbon-sensor",
+    "grid-sensor",
+    "heater",
+    "hepa-filter-monitoring",
+    "home-output-sensor",
+    "humidity-sensor",
+    "input",
+    "leak-sensor",
+    "level-sensor",
+    "light",
+    "light-sensor",
+    "lock",
+    "maintenance",
+    "motion-sensor",
+    "music",
+    "no2-matter-index-sensor",
+    "no2-sensor",
+    "noise-sensor",
+    "o3-sensor",
+    "opening-sensor",
+    "orp-sensor",
+    "ph-sensor",
+    "pm10-sensor",
+    "pm25-sensor",
+    "precipitation-sensor",
+    "presence-sensor",
+    "pressure-sensor",
+    "rain-sensor",
+    "risk",
+    "shutter",
+    "signal",
+    "siren",
+    "sismic-sensor",
+    "smoke-sensor",
+    "so2-sensor",
+    "soil-moisture-sensor",
+    "speed-sensor",
+    "surface",
+    "switch",
+    "tamper",
+    "teleinformation",
+    "television",
+    "temperature-sensor",
+    "text",
+    "thermostat",
+    "unknown",
+    "uv-sensor",
+    "vacuum-cleaner",
+    "vibration-sensor",
+    "voc-index-sensor",
+    "voc-matter-index-sensor",
+    "voc-sensor",
+    "volume-sensor",
+    "water-heater",
+    "water-valve"
+  ],
+  "types": [
+    "acceleration-x",
+    "acceleration-y",
+    "acceleration-z",
+    "adir1",
+    "adir2",
+    "adir3",
+    "adps",
+    "airflow-direction",
+    "alarm",
+    "alarm-mode",
+    "alarm-state",
+    "angle-x",
+    "angle-y",
+    "angle-z",
+    "aqi",
+    "auto-close-when-water-shortage",
+    "average",
+    "battery-energy-remaining",
+    "battery-level",
+    "battery-power",
+    "battery-range-estimate",
+    "battery-temperature",
+    "battery-voltage",
+    "bed-activity",
+    "binary",
+    "boost",
+    "brightness",
+    "burglar",
+    "carbon-free-percentage",
+    "carbon-intensity",
+    "ccain",
+    "ccain_1",
+    "ccasn",
+    "ccasn_1",
+    "channel",
+    "channel-down",
+    "channel-previous",
+    "channel-up",
+    "charge-current",
+    "charge-energy-added-total",
+    "charge-energy-consumption-total",
+    "charge-index",
+    "charge-on",
+    "charge-power",
+    "charge-voltage",
+    "charging",
+    "charging-state",
+    "clean-mode",
+    "click",
+    "climate-on",
+    "color",
+    "connector-status",
+    "contamination-state",
+    "current",
+    "current-device-status",
+    "daily-consumption",
+    "daily-consumption-cost",
+    "daily-irrigation-volume",
+    "daily-production",
+    "daily-production-revenue",
+    "decimal",
+    "dimmer",
+    "discharge-index",
+    "discharge-power",
+    "dock",
+    "door-opened",
+    "down",
+    "drive-energy-consumption-total",
+    "eait",
+    "easd01",
+    "easd02",
+    "easd03",
+    "easd04",
+    "easf01",
+    "easf02",
+    "easf03",
+    "easf04",
+    "easf05",
+    "easf06",
+    "easf07",
+    "easf08",
+    "easf09",
+    "easf10",
+    "east",
+    "effect-mode",
+    "effect-speed",
+    "enabled",
+    "energy",
+    "energy-consumption",
+    "energy-efficiency",
+    "enter",
+    "erq1",
+    "erq2",
+    "erq3",
+    "erq4",
+    "exit",
+    "fan-speed",
+    "filter-life-remaining",
+    "flow",
+    "forward",
+    "guide",
+    "heating",
+    "hhphc",
+    "hue",
+    "image",
+    "imax",
+    "imax1",
+    "imax2",
+    "imax3",
+    "index",
+    "index-today",
+    "index-yesterday",
+    "indoor-temperature",
+    "info",
+    "input-index",
+    "input-power",
+    "integer",
+    "irms1",
+    "irms2",
+    "irms3",
+    "last-charge-energy-added",
+    "last-charge-energy-consumption",
+    "left",
+    "life-remaining",
+    "liquid-depth",
+    "liquid-level-percent",
+    "liquid-state",
+    "lmh_volume",
+    "lock",
+    "max",
+    "melody",
+    "menu",
+    "min",
+    "mode",
+    "move",
+    "muted",
+    "next",
+    "ntarf",
+    "odometer",
+    "off-grid-index",
+    "off-grid-power",
+    "operating-state",
+    "output-index",
+    "output-power",
+    "pan-position",
+    "pause",
+    "pcoup",
+    "percent",
+    "pilot-wire-mode",
+    "play",
+    "play_notification",
+    "playback_state",
+    "plugged",
+    "position",
+    "power",
+    "pref",
+    "preset",
+    "previous",
+    "probe",
+    "push",
+    "rate",
+    "real-time-irrigation-duration",
+    "real-time-irrigation-volume",
+    "record",
+    "remaining-hot-water",
+    "renewable-percentage",
+    "return",
+    "rewind",
+    "right",
+    "ring",
+    "rock-setting",
+    "rotation",
+    "run-mode",
+    "saturation",
+    "select",
+    "sinsti",
+    "sinsts",
+    "sinsts1",
+    "sinsts2",
+    "sinsts3",
+    "size",
+    "smaxin",
+    "smaxin_1",
+    "smaxn",
+    "smaxn1",
+    "smaxn1_1",
+    "smaxn2",
+    "smaxn2_1",
+    "smaxn3",
+    "smaxn3_1",
+    "smaxn_1",
+    "source",
+    "speed",
+    "state",
+    "status",
+    "stop",
+    "swing-horizontal",
+    "swing-vertical",
+    "target-charge-limit",
+    "target-current",
+    "target-temperature",
+    "temperature",
+    "temporary-mute",
+    "test-in-progress",
+    "text",
+    "thirty-minutes-consumption",
+    "thirty-minutes-consumption-cost",
+    "thirty-minutes-production",
+    "thirty-minutes-production-revenue",
+    "tilt-angle",
+    "tilt-position",
+    "tire-pressure",
+    "tools",
+    "umoy1",
+    "umoy2",
+    "umoy3",
+    "unknown",
+    "up",
+    "urms1",
+    "urms2",
+    "urms3",
+    "valve-work-state",
+    "voltage",
+    "volume",
+    "volume-down",
+    "volume-mute",
+    "volume-up",
+    "vtic",
+    "wind-setting",
+    "window-opened",
+    "zoom-position"
+  ],
+  "poll_frequencies_ms": [1000, 2000, 10000, 15000, 30000, 60000],
+  "units": [
+    "celsius",
+    "fahrenheit",
+    "kelvin",
+    "percent",
+    "pascal",
+    "hPa",
+    "kPa",
+    "bar",
+    "psi",
+    "milli-bar",
+    "lux",
+    "ppm",
+    "ppb",
+    "ppt",
+    "watt",
+    "kilowatt",
+    "watt-hour",
+    "kilowatt-hour",
+    "megawatt-hour",
+    "ampere",
+    "milliampere",
+    "millivolt",
+    "volt",
+    "kilovolt-ampere",
+    "volt-ampere",
+    "volt-ampere-reactive",
+    "watt-hour-per-km",
+    "kilowatt-hour-per-100-km",
+    "watt-hour-per-mile",
+    "kilowatt-hour-per-100-mile",
+    "gram-co2eq-per-kilowatt-hour",
+    "km-per-kilowatt-hour",
+    "mile-per-kilowatt-hour",
+    "mm",
+    "cm",
+    "m",
+    "km",
+    "inch",
+    "feet",
+    "mile",
+    "square-centimeter",
+    "square-meter",
+    "square-kilometer",
+    "degree",
+    "liter",
+    "milliliter",
+    "cubicmeter",
+    "cubic-meter-per-hour",
+    "euro",
+    "dollar",
+    "bitcoin",
+    "litecoin",
+    "dogecoin",
+    "ethereum",
+    "pound-sterling",
+    "meter-per-second",
+    "kilometer-per-hour",
+    "feet-per-second",
+    "mile-per-hour",
+    "millimeter-per-hour",
+    "millimeter-per-day",
+    "uv-index",
+    "microseconds",
+    "milliseconds",
+    "seconds",
+    "minutes",
+    "hours",
+    "days",
+    "weeks",
+    "months",
+    "years",
+    "bit",
+    "kilobit",
+    "megabit",
+    "gigabit",
+    "byte",
+    "kilobyte",
+    "megabyte",
+    "gigabyte",
+    "terabyte",
+    "bits-per-second",
+    "kilobits-per-second",
+    "megabits-per-second",
+    "gigabits-per-second",
+    "bytes-per-second",
+    "kilobytes-per-second",
+    "megabytes-per-second",
+    "gigabytes-per-second",
+    "aqi",
+    "ph",
+    "milligram-per-cubic-meter",
+    "microgram-per-cubic-meter",
+    "nanogram-per-cubic-meter",
+    "particles-per-cubic-meter",
+    "becquerel-per-cubic-meter",
+    "decibel"
+  ],
+  "units_by_category": {
+    "switch": ["ampere", "millivolt", "volt", "watt", "kilowatt", "watt-hour", "kilowatt-hour"],
+    "battery": ["percent"],
+    "co-sensor": ["ppm"],
+    "co2-sensor": ["ppm"],
+    "distance-sensor": ["mm", "cm", "m", "km", "inch", "feet", "mile"],
+    "level-sensor": ["mm", "cm", "m", "km", "inch", "feet", "mile", "percent"],
+    "humidity-sensor": ["percent"],
+    "maintenance": ["percent"],
+    "soil-moisture-sensor": ["percent"],
+    "light-sensor": ["lux"],
+    "pressure-sensor": ["pascal", "hPa", "kPa", "bar", "psi", "milli-bar"],
+    "temperature-sensor": ["celsius", "fahrenheit", "kelvin"],
+    "device-temperature-sensor": ["celsius", "fahrenheit"],
+    "energy-sensor": [
+      "milliampere",
+      "ampere",
+      "millivolt",
+      "volt",
+      "watt",
+      "kilowatt",
+      "watt-hour",
+      "kilowatt-hour",
+      "megawatt-hour",
+      "kilovolt-ampere",
+      "volt-ampere",
+      "volt-ampere-reactive",
+      "euro",
+      "dollar"
+    ],
+    "energy-production-sensor": [
+      "watt",
+      "kilowatt",
+      "watt-hour",
+      "kilowatt-hour",
+      "euro",
+      "dollar"
+    ],
+    "grid-carbon-sensor": ["gram-co2eq-per-kilowatt-hour", "percent"],
+    "grid-sensor": ["watt", "kilowatt", "watt-hour", "kilowatt-hour"],
+    "home-output-sensor": ["watt", "kilowatt", "watt-hour", "kilowatt-hour"],
+    "battery-storage": ["percent", "watt", "kilowatt", "watt-hour", "kilowatt-hour"],
+    "electrical-vehicle-battery": [
+      "celsius",
+      "fahrenheit",
+      "kilowatt",
+      "kilowatt-hour",
+      "km",
+      "mile",
+      "percent",
+      "volt"
+    ],
+    "electrical-vehicle-charge": [
+      "ampere",
+      "kilowatt",
+      "kilowatt-hour",
+      "megawatt-hour",
+      "percent",
+      "volt"
+    ],
+    "electrical-vehicle-climate": ["celsius", "fahrenheit"],
+    "electrical-vehicle-drive": [
+      "mile-per-hour",
+      "kilometer-per-hour",
+      "kilowatt-hour",
+      "watt-hour-per-km",
+      "watt-hour-per-mile",
+      "kilowatt-hour-per-100-km",
+      "kilowatt-hour-per-100-mile"
+    ],
+    "electrical-vehicle-consumption": [
+      "watt-hour-per-km",
+      "watt-hour-per-mile",
+      "kilowatt-hour-per-100-km",
+      "kilowatt-hour-per-100-mile",
+      "km-per-kilowatt-hour",
+      "mile-per-kilowatt-hour"
+    ],
+    "electrical-vehicle-state": ["km", "mile", "bar", "psi", "kPa"],
+    "volume-sensor": ["liter", "milliliter", "cubicmeter"],
+    "water-heater": ["celsius", "fahrenheit", "percent", "liter"],
+    "water-valve": ["cubic-meter-per-hour", "seconds", "liter"],
+    "currency": ["euro", "dollar", "bitcoin", "litecoin", "ethereum", "dogecoin", "pound-sterling"],
+    "speed-sensor": ["meter-per-second", "kilometer-per-hour"],
+    "precipitation-sensor": ["millimeter-per-hour", "millimeter-per-day", "millivolt"],
+    "uv-sensor": ["uv-index"],
+    "duration": [
+      "microseconds",
+      "milliseconds",
+      "seconds",
+      "minutes",
+      "hours",
+      "days",
+      "weeks",
+      "months",
+      "years"
+    ],
+    "voc-sensor": ["ppb"],
+    "data": [
+      "bit",
+      "kilobit",
+      "megabit",
+      "gigabit",
+      "byte",
+      "kilobyte",
+      "megabyte",
+      "gigabyte",
+      "terabyte"
+    ],
+    "datarate": [
+      "bits-per-second",
+      "kilobits-per-second",
+      "megabits-per-second",
+      "gigabits-per-second",
+      "bytes-per-second",
+      "kilobytes-per-second",
+      "megabytes-per-second",
+      "gigabytes-per-second"
+    ],
+    "thermostat": ["celsius", "fahrenheit"],
+    "air-conditioning": ["celsius", "fahrenheit"],
+    "fan": ["percent"],
+    "airquality-sensor": ["aqi"],
+    "ph-sensor": ["ph"],
+    "orp-sensor": ["millivolt"],
+    "pm25-sensor": [
+      ["milligram-per-cubic-meter"],
+      ["microgram-per-cubic-meter"],
+      ["nanogram-per-cubic-meter"]
+    ],
+    "pm10-sensor": [
+      ["microgram-per-cubic-meter"],
+      ["microgram-per-cubic-meter"],
+      ["nanogram-per-cubic-meter"]
+    ],
+    "formaldehyd-sensor": [
+      ["microgram-per-cubic-meter"],
+      ["microgram-per-cubic-meter"],
+      ["nanogram-per-cubic-meter"]
+    ],
+    "no2-sensor": [
+      "microgram-per-cubic-meter",
+      "milligram-per-cubic-meter",
+      "nanogram-per-cubic-meter"
+    ],
+    "o3-sensor": [
+      "microgram-per-cubic-meter",
+      "milligram-per-cubic-meter",
+      "nanogram-per-cubic-meter"
+    ],
+    "so2-sensor": [
+      "microgram-per-cubic-meter",
+      "milligram-per-cubic-meter",
+      "nanogram-per-cubic-meter"
+    ],
+    "surface": ["square-centimeter", "square-meter", "square-kilometer"]
+  },
+  "pairs": {
+    "child-lock/binary": {
+      "label_fr": "Sécurité enfant",
+      "label_en": "Child lock",
+      "icon": "lock"
+    },
+    "airquality-sensor/aqi": {
+      "label_fr": "Indice de qualité de l'air",
+      "label_en": "Air Quality Index",
+      "icon": "bar-chart-2"
+    },
+    "air-conditioning/binary": {
+      "label_fr": "Commutateur",
+      "label_en": "Switch (On/Off)",
+      "icon": "power"
+    },
+    "air-conditioning/mode": {
+      "label_fr": "Mode",
+      "label_en": "Mode",
+      "icon": "settings"
+    },
+    "air-conditioning/target-temperature": {
+      "label_fr": "Température de consigne",
+      "label_en": "Target temperature",
+      "icon": "thermometer"
+    },
+    "air-conditioning/fan-speed": {
+      "label_fr": "Vitesse de ventilation",
+      "label_en": "Fan speed",
+      "icon": "wind"
+    },
+    "air-conditioning/swing-horizontal": {
+      "label_fr": "Balayage horizontal",
+      "label_en": "Horizontal swing",
+      "icon": "refresh-cw"
+    },
+    "air-conditioning/swing-vertical": {
+      "label_fr": "Balayage vertical",
+      "label_en": "Vertical swing",
+      "icon": "refresh-cw"
+    },
+    "angle-sensor/integer": {
+      "label_fr": "Angle",
+      "label_en": "Angle",
+      "icon": "rotate-cw"
+    },
+    "battery/integer": {
+      "label_fr": "Batterie",
+      "label_en": "Battery",
+      "icon": "battery"
+    },
+    "battery/charging": {
+      "label_fr": "En charge",
+      "label_en": "Charging",
+      "icon": "battery-charging"
+    },
+    "battery-low/binary": {
+      "label_fr": "Batterie faible (Oui/Non)",
+      "label_en": "Low battery (yes/no)",
+      "icon": "battery"
+    },
+    "battery-storage/battery-level": {
+      "label_fr": "Niveau de batterie",
+      "label_en": "Battery level",
+      "icon": "battery"
+    },
+    "battery-storage/charge-power": {
+      "label_fr": "Puissance de charge",
+      "label_en": "Charge power",
+      "icon": "battery-charging"
+    },
+    "battery-storage/discharge-power": {
+      "label_fr": "Puissance de décharge",
+      "label_en": "Discharge power",
+      "icon": "zap"
+    },
+    "battery-storage/charge-index": {
+      "label_fr": "Index de charge",
+      "label_en": "Charge index",
+      "icon": "battery-charging"
+    },
+    "battery-storage/discharge-index": {
+      "label_fr": "Index de décharge",
+      "label_en": "Discharge index",
+      "icon": "zap"
+    },
+    "battery-storage/battery-energy-remaining": {
+      "label_fr": "Énergie restante en batterie",
+      "label_en": "Battery energy remaining",
+      "icon": "battery"
+    },
+    "button/click": {
+      "label_fr": "Clic bouton",
+      "label_en": "Button (click)",
+      "icon": "circle"
+    },
+    "button/push": {
+      "label_fr": "Bouton poussoir",
+      "label_en": "Push button",
+      "icon": "circle"
+    },
+    "camera/image": {
+      "label_fr": "Caméra (Image)",
+      "label_en": "Camera",
+      "icon": "camera"
+    },
+    "camera/enabled": {
+      "label_fr": "Caméra activée",
+      "label_en": "Camera enabled",
+      "icon": "power"
+    },
+    "camera/move": {
+      "label_fr": "Mouvement de la caméra (PTZ)",
+      "label_en": "Camera movement (PTZ)",
+      "icon": "move"
+    },
+    "camera/preset": {
+      "label_fr": "Position mémorisée de la caméra (preset)",
+      "label_en": "Camera preset",
+      "icon": "map-pin"
+    },
+    "camera/pan-position": {
+      "label_fr": "Position panoramique de la caméra",
+      "label_en": "Camera pan position",
+      "icon": "crosshair"
+    },
+    "camera/tilt-position": {
+      "label_fr": "Position d'inclinaison de la caméra",
+      "label_en": "Camera tilt position",
+      "icon": "crosshair"
+    },
+    "camera/zoom-position": {
+      "label_fr": "Position du zoom de la caméra",
+      "label_en": "Camera zoom position",
+      "icon": "crosshair"
+    },
+    "charging-station/connector-status": {
+      "label_fr": "Statut du connecteur",
+      "label_en": "Connector status",
+      "icon": "activity"
+    },
+    "charging-station/charging-state": {
+      "label_fr": "État de la charge",
+      "label_en": "Charging state",
+      "icon": "zap"
+    },
+    "cube/mode": {
+      "label_fr": "Mode",
+      "label_en": "Mode",
+      "icon": "activity"
+    },
+    "cube/rotation": {
+      "label_fr": "Rotation",
+      "label_en": "Rotation",
+      "icon": "rotate-cw"
+    },
+    "currency/decimal": {
+      "label_fr": "Monnaie",
+      "label_en": "Currency",
+      "icon": "dollar-sign"
+    },
+    "co-sensor/binary": {
+      "label_fr": "Détection de CO",
+      "label_en": "CO (binary)",
+      "icon": "alert-circle"
+    },
+    "co2-sensor/decimal": {
+      "label_fr": "Niveau de CO2 (décimal)",
+      "label_en": "Co2 (decimal)",
+      "icon": "bar-chart-2"
+    },
+    "co2-sensor/integer": {
+      "label_fr": "Niveau de CO2 (entier)",
+      "label_en": "Co2 (integer)",
+      "icon": "bar-chart-2"
+    },
+    "counter-sensor/integer": {
+      "label_fr": "Compteur entier",
+      "label_en": "Counter (integer)",
+      "icon": "plus"
+    },
+    "curtain/state": {
+      "label_fr": "Etat du rideau",
+      "label_en": "Curtain state",
+      "icon": "sliders"
+    },
+    "curtain/position": {
+      "label_fr": "Position du rideau",
+      "label_en": "Curtain position",
+      "icon": "sliders"
+    },
+    "data/size": {
+      "label_fr": "Taille",
+      "label_en": "Size",
+      "icon": "hard-drive"
+    },
+    "datarate/rate": {
+      "label_fr": "Débit",
+      "label_en": "Rate",
+      "icon": "activity"
+    },
+    "device-temperature-sensor/decimal": {
+      "label_fr": "Température",
+      "label_en": "Temperature",
+      "icon": "cpu"
+    },
+    "distance-sensor/decimal": {
+      "label_fr": "Distance",
+      "label_en": "Distance",
+      "icon": "italic"
+    },
+    "doorbell/ring": {
+      "label_fr": "Sonnerie",
+      "label_en": "Ring",
+      "icon": "bell"
+    },
+    "duration/decimal": {
+      "label_fr": "Durée (décimale)",
+      "label_en": "Duration (decimal)",
+      "icon": "watch"
+    },
+    "duration/integer": {
+      "label_fr": "Durée (entier)",
+      "label_en": "Duration (integer)",
+      "icon": "clock"
+    },
+    "electrical-vehicle-battery/battery-energy-remaining": {
+      "label_fr": "Énergie restante",
+      "label_en": "Remaining energy",
+      "icon": "zap"
+    },
+    "electrical-vehicle-battery/battery-level": {
+      "label_fr": "Niveau batterie",
+      "label_en": "Battery level",
+      "icon": "battery"
+    },
+    "electrical-vehicle-battery/battery-power": {
+      "label_fr": "Puissance batterie",
+      "label_en": "Battery power",
+      "icon": "zap"
+    },
+    "electrical-vehicle-battery/battery-range-estimate": {
+      "label_fr": "Autonomie estimée",
+      "label_en": "Estimated range",
+      "icon": "battery"
+    },
+    "electrical-vehicle-battery/battery-temperature": {
+      "label_fr": "Température batterie",
+      "label_en": "Battery temperature",
+      "icon": "thermometer"
+    },
+    "electrical-vehicle-battery/battery-voltage": {
+      "label_fr": "Tension batterie",
+      "label_en": "Battery voltage",
+      "icon": "zap"
+    },
+    "electrical-vehicle-charge/charge-current": {
+      "label_fr": "Intensité charge",
+      "label_en": "Charging current",
+      "icon": "zap"
+    },
+    "electrical-vehicle-charge/charge-energy-added-total": {
+      "label_fr": "Énergie totale ajoutée",
+      "label_en": "Total energy added",
+      "icon": "zap"
+    },
+    "electrical-vehicle-charge/charge-energy-consumption-total": {
+      "label_fr": "Énergie totale consommée",
+      "label_en": "Total energy consumed",
+      "icon": "zap"
+    },
+    "electrical-vehicle-charge/charge-on": {
+      "label_fr": "Commutateur charge",
+      "label_en": "Charge switch",
+      "icon": "power"
+    },
+    "electrical-vehicle-charge/charge-power": {
+      "label_fr": "Puissance charge",
+      "label_en": "Charging power",
+      "icon": "zap"
+    },
+    "electrical-vehicle-charge/charge-voltage": {
+      "label_fr": "Tension charge",
+      "label_en": "Charging voltage",
+      "icon": "zap"
+    },
+    "electrical-vehicle-charge/last-charge-energy-added": {
+      "label_fr": "Énergie ajoutée (dernière charge)",
+      "label_en": "Energy added (last charge)",
+      "icon": "zap"
+    },
+    "electrical-vehicle-charge/last-charge-energy-consumption": {
+      "label_fr": "Énergie consommée (dernière charge)",
+      "label_en": "Energy consumed (last charge)",
+      "icon": "zap"
+    },
+    "electrical-vehicle-charge/plugged": {
+      "label_fr": "Véhicule branché",
+      "label_en": "Vehicle plugged",
+      "icon": "power"
+    },
+    "electrical-vehicle-charge/target-charge-limit": {
+      "label_fr": "Limite de charge",
+      "label_en": "Charge limit",
+      "icon": "battery"
+    },
+    "electrical-vehicle-charge/target-current": {
+      "label_fr": "Intensité de consigne",
+      "label_en": "Target current",
+      "icon": "zap"
+    },
+    "electrical-vehicle-drive/drive-energy-consumption-total": {
+      "label_fr": "Énergie totale consommée",
+      "label_en": "Total energy consumed",
+      "icon": "zap"
+    },
+    "electrical-vehicle-drive/speed": {
+      "label_fr": "Vitesse",
+      "label_en": "Speed",
+      "icon": "wind"
+    },
+    "electrical-vehicle-consumption/energy-consumption": {
+      "label_fr": "Consommation instantanée",
+      "label_en": "Instant consumption",
+      "icon": "zap"
+    },
+    "electrical-vehicle-consumption/energy-efficiency": {
+      "label_fr": "Efficacité énergétique",
+      "label_en": "Energy efficiency",
+      "icon": "zap"
+    },
+    "electrical-vehicle-state/door-opened": {
+      "label_fr": "Porte ouverte",
+      "label_en": "Door open",
+      "icon": "unlock"
+    },
+    "electrical-vehicle-state/odometer": {
+      "label_fr": "Odomètre",
+      "label_en": "Odometer",
+      "icon": "trending-up"
+    },
+    "electrical-vehicle-state/tire-pressure": {
+      "label_fr": "Pression des pneus",
+      "label_en": "Tire pressure",
+      "icon": "disc"
+    },
+    "electrical-vehicle-state/window-opened": {
+      "label_fr": "Fenêtre ouverte",
+      "label_en": "Window open",
+      "icon": "square"
+    },
+    "electrical-vehicle-climate/climate-on": {
+      "label_fr": "Commutateur climatisation",
+      "label_en": "Climate switch",
+      "icon": "power"
+    },
+    "electrical-vehicle-climate/indoor-temperature": {
+      "label_fr": "Température intérieure",
+      "label_en": "Indoor temperature",
+      "icon": "thermometer"
+    },
+    "electrical-vehicle-climate/target-temperature": {
+      "label_fr": "Température de consigne",
+      "label_en": "Target temperature",
+      "icon": "thermometer"
+    },
+    "electrical-vehicle-command/alarm": {
+      "label_fr": "Alarme",
+      "label_en": "Alarm",
+      "icon": "bell"
+    },
+    "electrical-vehicle-command/lock": {
+      "label_fr": "Verrouillage",
+      "label_en": "Lock",
+      "icon": "lock"
+    },
+    "energy-sensor/voltage": {
+      "label_fr": "Tension",
+      "label_en": "Voltage",
+      "icon": "zap"
+    },
+    "energy-sensor/current": {
+      "label_fr": "Intensité",
+      "label_en": "Current",
+      "icon": "zap"
+    },
+    "energy-sensor/binary": {
+      "label_fr": "Relais",
+      "label_en": "Switch",
+      "icon": "power"
+    },
+    "energy-sensor/power": {
+      "label_fr": "Puissance",
+      "label_en": "Power",
+      "icon": "zap"
+    },
+    "energy-sensor/energy": {
+      "label_fr": "Energie",
+      "label_en": "Energy",
+      "icon": "zap"
+    },
+    "energy-sensor/index": {
+      "label_fr": "Index",
+      "label_en": "Index",
+      "icon": "zap"
+    },
+    "energy-sensor/index-today": {
+      "label_fr": "Index aujourd'hui",
+      "label_en": "Index today",
+      "icon": "zap"
+    },
+    "energy-sensor/index-yesterday": {
+      "label_fr": "Index hier",
+      "label_en": "Index yesterday",
+      "icon": "zap"
+    },
+    "energy-sensor/daily-consumption": {
+      "label_fr": "Consommation journalière",
+      "label_en": "Daily Consumption",
+      "icon": "zap"
+    },
+    "energy-sensor/daily-consumption-cost": {
+      "label_fr": "Coût journalier",
+      "label_en": "Daily Cost",
+      "icon": "dollar-sign"
+    },
+    "energy-sensor/thirty-minutes-consumption": {
+      "label_fr": "Consommation 30 minutes",
+      "label_en": "30 Minutes Consumption",
+      "icon": "zap"
+    },
+    "energy-sensor/thirty-minutes-consumption-cost": {
+      "label_fr": "Coût 30 minutes",
+      "label_en": "30 Minutes Cost",
+      "icon": "dollar-sign"
+    },
+    "energy-production-sensor/power": {
+      "label_fr": "Puissance de production",
+      "label_en": "Production power",
+      "icon": "sun"
+    },
+    "energy-production-sensor/index": {
+      "label_fr": "Index",
+      "label_en": "Index",
+      "icon": "zap"
+    },
+    "energy-production-sensor/daily-production": {
+      "label_fr": "Production journalière",
+      "label_en": "Daily Production",
+      "icon": "zap"
+    },
+    "energy-production-sensor/daily-production-revenue": {
+      "label_fr": "Revenu journalier",
+      "label_en": "Daily Revenue",
+      "icon": "dollar-sign"
+    },
+    "energy-production-sensor/thirty-minutes-production": {
+      "label_fr": "Production 30 minutes",
+      "label_en": "30 Minutes Production",
+      "icon": "zap"
+    },
+    "energy-production-sensor/thirty-minutes-production-revenue": {
+      "label_fr": "Revenu 30 minutes",
+      "label_en": "30 Minutes Revenue",
+      "icon": "dollar-sign"
+    },
+    "fan/mode": {
+      "label_fr": "Mode ventilateur",
+      "label_en": "Fan mode",
+      "icon": "wind"
+    },
+    "fan/percent": {
+      "label_fr": "Vitesse (%)",
+      "label_en": "Fan speed (%)",
+      "icon": "bar-chart-2"
+    },
+    "fan/speed": {
+      "label_fr": "Vitesse (niveau)",
+      "label_en": "Fan speed (level)",
+      "icon": "bar-chart-2"
+    },
+    "fan/airflow-direction": {
+      "label_fr": "Direction du flux d'air",
+      "label_en": "Airflow direction",
+      "icon": "repeat"
+    },
+    "fan/rock-setting": {
+      "label_fr": "Oscillation",
+      "label_en": "Rocking",
+      "icon": "refresh-cw"
+    },
+    "fan/wind-setting": {
+      "label_fr": "Mode vent",
+      "label_en": "Wind mode",
+      "icon": "moon"
+    },
+    "grid-carbon-sensor/carbon-intensity": {
+      "label_fr": "Intensité carbone du réseau",
+      "label_en": "Grid carbon intensity",
+      "icon": "cloud"
+    },
+    "grid-carbon-sensor/carbon-free-percentage": {
+      "label_fr": "Électricité décarbonée",
+      "label_en": "Carbon-free electricity",
+      "icon": "leaf"
+    },
+    "grid-carbon-sensor/renewable-percentage": {
+      "label_fr": "Électricité renouvelable",
+      "label_en": "Renewable electricity",
+      "icon": "wind"
+    },
+    "grid-sensor/input-power": {
+      "label_fr": "Puissance importée du réseau",
+      "label_en": "Grid import power",
+      "icon": "download"
+    },
+    "grid-sensor/output-power": {
+      "label_fr": "Puissance exportée vers le réseau",
+      "label_en": "Grid export power",
+      "icon": "upload"
+    },
+    "grid-sensor/power": {
+      "label_fr": "Échange réseau électrique (import +, export −)",
+      "label_en": "Grid power (import +, export −)",
+      "icon": "zap"
+    },
+    "grid-sensor/input-index": {
+      "label_fr": "Index import réseau électrique",
+      "label_en": "Grid import index",
+      "icon": "download"
+    },
+    "grid-sensor/output-index": {
+      "label_fr": "Index export réseau électrique",
+      "label_en": "Grid export index",
+      "icon": "upload"
+    },
+    "heater/pilot-wire-mode": {
+      "label_fr": "Mode",
+      "label_en": "Mode",
+      "icon": "thermometer"
+    },
+    "hepa-filter-monitoring/filter-life-remaining": {
+      "label_fr": "Durée de vie restante du filtre",
+      "label_en": "Filter life remaining",
+      "icon": "bar-chart-2"
+    },
+    "home-output-sensor/power": {
+      "label_fr": "Puissance vers la maison",
+      "label_en": "Home output power",
+      "icon": "home"
+    },
+    "home-output-sensor/index": {
+      "label_fr": "Index sortie maison",
+      "label_en": "Home output index",
+      "icon": "home"
+    },
+    "home-output-sensor/off-grid-power": {
+      "label_fr": "Puissance sortie secours",
+      "label_en": "Off-grid output power",
+      "icon": "power"
+    },
+    "home-output-sensor/off-grid-index": {
+      "label_fr": "Index sortie secours",
+      "label_en": "Off-grid output index",
+      "icon": "power"
+    },
+    "humidity-sensor/decimal": {
+      "label_fr": "Humidité (pourcentage)",
+      "label_en": "Humidity (decimal)",
+      "icon": "droplet"
+    },
+    "leak-sensor/binary": {
+      "label_fr": "Fuite (Oui/Non)",
+      "label_en": "Leak (yes/no)",
+      "icon": "droplet"
+    },
+    "light/binary": {
+      "label_fr": "Eclairage On/Off",
+      "label_en": "Light On/Off",
+      "icon": "sun"
+    },
+    "light/brightness": {
+      "label_fr": "Luminosité éclairage",
+      "label_en": "Light Brightness",
+      "icon": "sun"
+    },
+    "light/hue": {
+      "label_fr": "Teinte éclairage",
+      "label_en": "Light Hue",
+      "icon": "sun"
+    },
+    "light/color": {
+      "label_fr": "Couleur éclairage",
+      "label_en": "Light Color",
+      "icon": "sun"
+    },
+    "light/saturation": {
+      "label_fr": "Saturation éclairage",
+      "label_en": "Light Saturation",
+      "icon": "sun"
+    },
+    "light/temperature": {
+      "label_fr": "Température éclairage",
+      "label_en": "Light Temperature",
+      "icon": "thermometer"
+    },
+    "light/power": {
+      "label_fr": "Puissance consommée éclairage",
+      "label_en": "Light Power consumption",
+      "icon": "zap"
+    },
+    "light/effect-mode": {
+      "label_fr": "Effet",
+      "label_en": "Effect mode",
+      "icon": "play"
+    },
+    "light/effect-speed": {
+      "label_fr": "Vitesse de l'effet",
+      "label_en": "Effect speed",
+      "icon": "activity"
+    },
+    "light-sensor/integer": {
+      "label_fr": "Luminosité entière",
+      "label_en": "Luminosity (integer)",
+      "icon": null
+    },
+    "light-sensor/decimal": {
+      "label_fr": "Luminosité décimale",
+      "label_en": "Luminosity (decimal)",
+      "icon": "sun"
+    },
+    "light-sensor/binary": {
+      "label_fr": null,
+      "label_en": null,
+      "icon": "sun"
+    },
+    "level-sensor/decimal": {
+      "label_fr": "Capteur de niveau",
+      "label_en": "Level sensor",
+      "icon": "droplet"
+    },
+    "level-sensor/liquid-state": {
+      "label_fr": "État du niveau",
+      "label_en": "Liquid level state",
+      "icon": "droplet"
+    },
+    "level-sensor/liquid-level-percent": {
+      "label_fr": "Niveau du liquide (Pourcentage)",
+      "label_en": "Liquid level percent",
+      "icon": "droplet"
+    },
+    "level-sensor/liquid-depth": {
+      "label_fr": "Profondeur du liquide",
+      "label_en": "Liquid depth",
+      "icon": "droplet"
+    },
+    "motion-sensor/push": {
+      "label_fr": "Détecteur de mouvement",
+      "label_en": "Motion (push)",
+      "icon": "eye"
+    },
+    "motion-sensor/binary": {
+      "label_fr": "Détection mouvement Oui/Non",
+      "label_en": "Motion (binary)",
+      "icon": "eye"
+    },
+    "lock/integer": {
+      "label_fr": "Batterie",
+      "label_en": "Battery",
+      "icon": null
+    },
+    "lock/binary": {
+      "label_fr": "Verrouillage",
+      "label_en": "Locking",
+      "icon": "lock"
+    },
+    "lock/state": {
+      "label_fr": "État",
+      "label_en": "State",
+      "icon": "sliders"
+    },
+    "maintenance/life-remaining": {
+      "label_fr": "Durée de vie restante du composant",
+      "label_en": "Component life remaining",
+      "icon": "tool"
+    },
+    "music/volume": {
+      "label_fr": "Volume de la musique",
+      "label_en": "Music volume",
+      "icon": "volume-1"
+    },
+    "music/play": {
+      "label_fr": "Bouton lecture musique",
+      "label_en": "Music play button",
+      "icon": "play"
+    },
+    "music/pause": {
+      "label_fr": "Bouton pause musique",
+      "label_en": "Music pause button",
+      "icon": "pause"
+    },
+    "music/previous": {
+      "label_fr": "Bouton précédent musique",
+      "label_en": "Music previous button",
+      "icon": "rewind"
+    },
+    "music/next": {
+      "label_fr": "Bouton suivant musique",
+      "label_en": "Music next button",
+      "icon": "fast-forward"
+    },
+    "music/playback_state": {
+      "label_fr": "Etat de la lecture musique",
+      "label_en": "Music playback state",
+      "icon": "bar-chart-2"
+    },
+    "music/play_notification": {
+      "label_fr": "Diffuser une notification",
+      "label_en": "Broadcast a notification",
+      "icon": "bell"
+    },
+    "noise-sensor/integer": {
+      "label_fr": "Bruit (entier)",
+      "label_en": "Noise (integer)",
+      "icon": "bar-chart-2"
+    },
+    "opening-sensor/binary": {
+      "label_fr": "Ouverture (Oui/Non)",
+      "label_en": "Opening (open/closed)",
+      "icon": "info"
+    },
+    "orp-sensor/decimal": {
+      "label_fr": "Redox / ORP (Décimale)",
+      "label_en": "ORP / Redox (Decimal)",
+      "icon": "zap"
+    },
+    "ph-sensor/decimal": {
+      "label_fr": "pH",
+      "label_en": "pH",
+      "icon": "droplet"
+    },
+    "pm25-sensor/decimal": {
+      "label_fr": "PM2.5 (Décimale)",
+      "label_en": "PM2.5 (decimal)",
+      "icon": "bar-chart-2"
+    },
+    "pm10-sensor/decimal": {
+      "label_fr": "PM10 (Décimale)",
+      "label_en": "PM10 (decimal)",
+      "icon": "bar-chart-2"
+    },
+    "formaldehyd-sensor/decimal": {
+      "label_fr": "Formaldéhyde (Décimale)",
+      "label_en": "Formaldehyd (decimal)",
+      "icon": "bar-chart-2"
+    },
+    "no2-sensor/decimal": {
+      "label_fr": "NO2 (Décimale)",
+      "label_en": "NO2 (decimal)",
+      "icon": "bar-chart-2"
+    },
+    "o3-sensor/decimal": {
+      "label_fr": "O3 (Décimale)",
+      "label_en": "O3 (decimal)",
+      "icon": "bar-chart-2"
+    },
+    "so2-sensor/decimal": {
+      "label_fr": "SO2 (Décimale)",
+      "label_en": "SO2 (decimal)",
+      "icon": "bar-chart-2"
+    },
+    "precipitation-sensor/decimal": {
+      "label_fr": "Précipitation",
+      "label_en": "Precipitation",
+      "icon": "umbrella"
+    },
+    "precipitation-sensor/integer": {
+      "label_fr": "Intensité (mV)",
+      "label_en": "Intensity (mV)",
+      "icon": "umbrella"
+    },
+    "presence-sensor/push": {
+      "label_fr": "Présence",
+      "label_en": "Presence",
+      "icon": "users"
+    },
+    "presence-sensor/binary": {
+      "label_fr": "Détection présence Oui/Non",
+      "label_en": "Presence (binary)",
+      "icon": "users"
+    },
+    "pressure-sensor/decimal": {
+      "label_fr": "Pression (décimale)",
+      "label_en": "Pressure (decimal)",
+      "icon": "cloud"
+    },
+    "pressure-sensor/integer": {
+      "label_fr": "Pression (entier)",
+      "label_en": "Pressure (integer)",
+      "icon": "cloud"
+    },
+    "rain-sensor/binary": {
+      "label_fr": "Détection pluie Oui/Non",
+      "label_en": "Rain detection Yes/No",
+      "icon": "umbrella"
+    },
+    "risk/integer": {
+      "label_fr": "Niveau de risque",
+      "label_en": "Risk Level",
+      "icon": "alert-circle"
+    },
+    "shutter/state": {
+      "label_fr": "Etat du volet",
+      "label_en": "Shutter state",
+      "icon": "sliders"
+    },
+    "shutter/position": {
+      "label_fr": "Position du volet",
+      "label_en": "Shutter position",
+      "icon": "sliders"
+    },
+    "signal/integer": {
+      "label_fr": "Intensité du signal",
+      "label_en": "Signal strength",
+      "icon": "radio"
+    },
+    "siren/binary": {
+      "label_fr": "Sirène On/Off",
+      "label_en": "Siren",
+      "icon": "bell"
+    },
+    "siren/lmh_volume": {
+      "label_fr": "Volume de la sirène",
+      "label_en": "Siren volume",
+      "icon": "volume-1"
+    },
+    "siren/melody": {
+      "label_fr": "Mélodie",
+      "label_en": "Melody",
+      "icon": "music"
+    },
+    "siren/test-in-progress": {
+      "label_fr": "Test en cours",
+      "label_en": "Test in progress",
+      "icon": "wrench"
+    },
+    "siren/alarm-mode": {
+      "label_fr": "Mode d'alarme",
+      "label_en": "Alarm mode",
+      "icon": "sliders"
+    },
+    "siren/alarm-state": {
+      "label_fr": "État de l'alarme",
+      "label_en": "Alarm state",
+      "icon": "activity"
+    },
+    "sismic-sensor/decimal": {
+      "label_fr": "Valeur sismique décimale",
+      "label_en": "Sismic (decimal)",
+      "icon": "activity"
+    },
+    "smoke-sensor/binary": {
+      "label_fr": "Capteur de fumée - Oui/Non",
+      "label_en": "Smoke (on/off)",
+      "icon": "alarm-smoke"
+    },
+    "smoke-sensor/decimal": {
+      "label_fr": "Valeur de fumée décimale",
+      "label_en": "Density (decimal)",
+      "icon": "wind"
+    },
+    "smoke-sensor/contamination-state": {
+      "label_fr": "Encrassement du détecteur",
+      "label_en": "Contamination",
+      "icon": "filter"
+    },
+    "smoke-sensor/muted": {
+      "label_fr": "Alarme coupée",
+      "label_en": "Muted",
+      "icon": "bell-off"
+    },
+    "smoke-sensor/temporary-mute": {
+      "label_fr": "Couper l'alarme",
+      "label_en": "Hush the alarm",
+      "icon": "volume-x"
+    },
+    "soil-moisture-sensor/decimal": {
+      "label_fr": "Humidité du sol (Décimale)",
+      "label_en": "Soil moisture (decimal)",
+      "icon": "droplet"
+    },
+    "surface/decimal": {
+      "label_fr": "Surface",
+      "label_en": "Surface",
+      "icon": "crop"
+    },
+    "switch/voltage": {
+      "label_fr": "Tension moyenne",
+      "label_en": "Switch Voltage",
+      "icon": "zap"
+    },
+    "switch/current": {
+      "label_fr": "Intensité consommée",
+      "label_en": "Switch Current",
+      "icon": "zap"
+    },
+    "switch/binary": {
+      "label_fr": "Commutateur",
+      "label_en": "Switch (On/Off)",
+      "icon": "power"
+    },
+    "switch/dimmer": {
+      "label_fr": "Variateur",
+      "label_en": "Switch Dimmer",
+      "icon": "bar-chart-2"
+    },
+    "switch/burglar": {
+      "label_fr": "Antivol",
+      "label_en": "Switch Burglar",
+      "icon": "users"
+    },
+    "switch/power": {
+      "label_fr": "Puissance consommée",
+      "label_en": "Power consumption",
+      "icon": "zap"
+    },
+    "switch/energy": {
+      "label_fr": "Energie consommée",
+      "label_en": "Energy consumption",
+      "icon": "zap"
+    },
+    "switch/target-current": {
+      "label_fr": "Intensité de consigne",
+      "label_en": "Target current",
+      "icon": "zap"
+    },
+    "speed-sensor/decimal": {
+      "label_fr": "Vitesse (décimale)",
+      "label_en": "Speed (decimal)",
+      "icon": "wind"
+    },
+    "speed-sensor/integer": {
+      "label_fr": "Vitesse (entier)",
+      "label_en": "Speed (integer)",
+      "icon": "wind"
+    },
+    "tamper/binary": {
+      "label_fr": "Détection sabotage (Oui/Non)",
+      "label_en": "Tamper (yes/no)",
+      "icon": "shield"
+    },
+    "teleinformation/binary": {
+      "label_fr": "Relais",
+      "label_en": "Switch",
+      "icon": "power"
+    },
+    "teleinformation/east": {
+      "label_fr": "Energie active soutirée totale (EAST)",
+      "label_en": "Total active power delivered (EAST)",
+      "icon": "zap"
+    },
+    "teleinformation/eait": {
+      "label_fr": "Energie active injectée totale (EAIT)",
+      "label_en": "Total active power injected (EAIT)",
+      "icon": "zap"
+    },
+    "teleinformation/easf01": {
+      "label_fr": "Energie active soutirée fournisseur (EASF01)",
+      "label_en": "Total provider active power delivered (EASF01)",
+      "icon": "zap"
+    },
+    "teleinformation/easf02": {
+      "label_fr": "Energie active soutirée fournisseur (EASF02)",
+      "label_en": "Total provider active power delivered (EASF02)",
+      "icon": "zap"
+    },
+    "teleinformation/easf03": {
+      "label_fr": "Energie active soutirée fournisseur (EASF03)",
+      "label_en": "Total provider active power delivered (EASF03)",
+      "icon": "zap"
+    },
+    "teleinformation/easf04": {
+      "label_fr": "Energie active soutirée fournisseur (EASF04)",
+      "label_en": "Total provider active power delivered (EASF04)",
+      "icon": "zap"
+    },
+    "teleinformation/easf05": {
+      "label_fr": "Energie active soutirée fournisseur (EASF05)",
+      "label_en": "Total provider active power delivered (EASF05)",
+      "icon": "zap"
+    },
+    "teleinformation/easf06": {
+      "label_fr": "Energie active soutirée fournisseur (EASF06)",
+      "label_en": "Total provider active power delivered (EASF06)",
+      "icon": "zap"
+    },
+    "teleinformation/easf07": {
+      "label_fr": "Energie active soutirée fournisseur (EASF07)",
+      "label_en": "Total provider active power delivered (EASF07)",
+      "icon": "zap"
+    },
+    "teleinformation/easf08": {
+      "label_fr": "Energie active soutirée fournisseur (EASF08)",
+      "label_en": "Total provider active power delivered (EASF08)",
+      "icon": "zap"
+    },
+    "teleinformation/easf09": {
+      "label_fr": "Energie active soutirée fournisseur (EASF09)",
+      "label_en": "Total provider active power delivered (EASF09)",
+      "icon": "zap"
+    },
+    "teleinformation/easf10": {
+      "label_fr": "Energie active soutirée fournisseur (EASF10)",
+      "label_en": "Total provider active power delivered (EASF10)",
+      "icon": "zap"
+    },
+    "teleinformation/pref": {
+      "label_fr": "Puissance apparente référence (PREF)",
+      "label_en": "Apparent power of reference (PREF)",
+      "icon": "zap"
+    },
+    "teleinformation/pcoup": {
+      "label_fr": "Puissance apparente coupure (PCOUP)",
+      "label_en": "Apparent power threshold (PCOUP)",
+      "icon": "zap"
+    },
+    "teleinformation/vtic": {
+      "label_fr": "Version du protocole (VTIC)",
+      "label_en": "Protocol version (VTIC)",
+      "icon": "zap"
+    },
+    "teleinformation/ccasn": {
+      "label_fr": "Position de la courbe charge active (CCASN)",
+      "label_en": "Current point of the active load curve drawn (CCASN)",
+      "icon": "zap"
+    },
+    "teleinformation/ccasn_1": {
+      "label_fr": "Position de la courbe charge active (CCASN-1)",
+      "label_en": "Previous point of the active load curve drawn (CCASN-1)",
+      "icon": "zap"
+    },
+    "teleinformation/umoy1": {
+      "label_fr": "Tension moyenne (UMOY1)",
+      "label_en": "Average RMS voltage (UMOY1)",
+      "icon": "zap"
+    },
+    "teleinformation/umoy2": {
+      "label_fr": "Tension moyenne (UMOY2)",
+      "label_en": "Average RMS voltage (UMOY2)",
+      "icon": "zap"
+    },
+    "teleinformation/umoy3": {
+      "label_fr": "Tension moyenne (UMOY3)",
+      "label_en": "Average RMS voltage (UMOY3)",
+      "icon": "zap"
+    },
+    "teleinformation/erq1": {
+      "label_fr": "Energie réactive Q1 totale (ERQ1)",
+      "label_en": "Total reactive power Q1 (ERQ1)",
+      "icon": "zap"
+    },
+    "teleinformation/erq2": {
+      "label_fr": "Energie réactive Q2 totale (ERQ2)",
+      "label_en": "Total reactive power Q2 (ERQ2)",
+      "icon": "zap"
+    },
+    "teleinformation/erq3": {
+      "label_fr": "Energie réactive Q3 totale (ERQ3)",
+      "label_en": "Total reactive power Q3 (ERQ3)",
+      "icon": "zap"
+    },
+    "teleinformation/erq4": {
+      "label_fr": "Energie réactive Q4 totale (ERQ4)",
+      "label_en": "Total reactive power Q4 (ERQ4)",
+      "icon": "zap"
+    },
+    "teleinformation/irms1": {
+      "label_fr": "Courant efficace (IRMS1)",
+      "label_en": "RMS current (IRMS1)",
+      "icon": "zap"
+    },
+    "teleinformation/irms2": {
+      "label_fr": "Courant efficace (IRMS2)",
+      "label_en": "RMS current (IRMS2)",
+      "icon": "zap"
+    },
+    "teleinformation/irms3": {
+      "label_fr": "Courant efficace (IRMS3)",
+      "label_en": "RMS current (IRMS3)",
+      "icon": "zap"
+    },
+    "teleinformation/urms1": {
+      "label_fr": "Tension efficace (URMS1)",
+      "label_en": "RMS voltage (URMS1)",
+      "icon": "zap"
+    },
+    "teleinformation/urms2": {
+      "label_fr": "Tension efficace (URMS2)",
+      "label_en": "RMS voltage (URMS2)",
+      "icon": "zap"
+    },
+    "teleinformation/urms3": {
+      "label_fr": "Tension efficace (URMS3)",
+      "label_en": "RMS voltage (URMS3)",
+      "icon": "zap"
+    },
+    "teleinformation/easd01": {
+      "label_fr": "Energie active soutirée distributeur (EASD01)",
+      "label_en": "Active energy withdrawn Distributor (EASD01)",
+      "icon": "zap"
+    },
+    "teleinformation/easd02": {
+      "label_fr": "Energie active soutirée distributeur (EASD02)",
+      "label_en": "Active energy withdrawn Distributor (EASD02)",
+      "icon": "zap"
+    },
+    "teleinformation/easd03": {
+      "label_fr": "Energie active soutirée distributeur (EASD03)",
+      "label_en": "Active energy withdrawn Distributor (EASD03)",
+      "icon": "zap"
+    },
+    "teleinformation/easd04": {
+      "label_fr": "Energie active soutirée distributeur (EASD04)",
+      "label_en": "Active energy withdrawn Distributor (EASD04)",
+      "icon": "zap"
+    },
+    "teleinformation/ntarf": {
+      "label_fr": "Numéro d'indice tarifaire (NTARF)",
+      "label_en": "Tarif index number (NTARF)",
+      "icon": "zap"
+    },
+    "teleinformation/ccain": {
+      "label_fr": "Point n de la courbe de charge active injectée (CCAIN)",
+      "label_en": "Point n of the withdrawn active load curve (CCAIN)",
+      "icon": "zap"
+    },
+    "teleinformation/ccain_1": {
+      "label_fr": "Point n-1 de la courbe de charge active injectée (CCAIN-1)",
+      "label_en": "Point n-1 of the withdrawn active load curve (CCAIN-1)",
+      "icon": "zap"
+    },
+    "teleinformation/sinsti": {
+      "label_fr": "Puissance apparente instantanée injectée (SINSTI)",
+      "label_en": "Instantaneous apparent power injected (SINSTI)",
+      "icon": "zap"
+    },
+    "teleinformation/smaxin": {
+      "label_fr": "Puissance apparente max. injectée n (SMAXIN)",
+      "label_en": "Apparent power max. injected n (SMAXIN)",
+      "icon": "zap"
+    },
+    "teleinformation/smaxin_1": {
+      "label_fr": "Puissance apparente max. injectée n-1 (SMAXIN-1)",
+      "label_en": "Apparent power max. injected n-1 (SMAXIN-1)",
+      "icon": "zap"
+    },
+    "teleinformation/smaxn": {
+      "label_fr": "Puissance apparente max. soutirée (SMAXN)",
+      "label_en": "Apparent power delivered peak (SMAXN)",
+      "icon": "zap"
+    },
+    "teleinformation/smaxn1": {
+      "label_fr": "Puissance apparente max. soutirée (SMAXN1)",
+      "label_en": "Apparent power delivered peak (SMAXN1)",
+      "icon": "zap"
+    },
+    "teleinformation/smaxn2": {
+      "label_fr": "Puissance apparente max. soutirée (SMAXN2)",
+      "label_en": "Apparent power delivered peak (SMAXN2)",
+      "icon": "zap"
+    },
+    "teleinformation/smaxn3": {
+      "label_fr": "Puissance apparente max. soutirée (SMAXN3)",
+      "label_en": "Apparent power delivered peak (SMAXN3)",
+      "icon": "zap"
+    },
+    "teleinformation/sinsts": {
+      "label_fr": "Puissance apparente instantanée soutirée (SINSTS)",
+      "label_en": "Immediate apparent power delivered (SINSTS)",
+      "icon": "zap"
+    },
+    "teleinformation/sinsts1": {
+      "label_fr": "Puissance apparente instantanée soutirée (SINSTS1)",
+      "label_en": "Immediate apparent power delivered (SINSTS1)",
+      "icon": "zap"
+    },
+    "teleinformation/sinsts2": {
+      "label_fr": "Puissance apparente instantanée soutirée (SINSTS2)",
+      "label_en": "Immediate apparent power delivered (SINSTS2)",
+      "icon": "zap"
+    },
+    "teleinformation/sinsts3": {
+      "label_fr": "Puissance apparente instantanée soutirée (SINSTS3)",
+      "label_en": "Immediate apparent power delivered (SINSTS3)",
+      "icon": "zap"
+    },
+    "teleinformation/smaxn_1": {
+      "label_fr": "Puissance apparente max. soutirée n-1 (SMAXN-1)",
+      "label_en": "Apparent power max. draw-off n-1 (SMAXN-1)",
+      "icon": "zap"
+    },
+    "teleinformation/smaxn1_1": {
+      "label_fr": "Puissance apparente max. soutirée n-1 (SMAXN1-1)",
+      "label_en": "Apparent power max. draw-off n-1 (SMAXN1-1)",
+      "icon": "zap"
+    },
+    "teleinformation/smaxn2_1": {
+      "label_fr": "Puissance apparente max. soutirée n-1 (SMAXN2-1)",
+      "label_en": "Apparent power max. draw-off n-1 (SMAXN2-1)",
+      "icon": "zap"
+    },
+    "teleinformation/smaxn3_1": {
+      "label_fr": "Puissance apparente max. soutirée n-1 (SMAXN3-1)",
+      "label_en": "Apparent power max. draw-off n-1 (SMAXN3-1)",
+      "icon": "zap"
+    },
+    "teleinformation/hhphc": {
+      "label_fr": "Programme HPHC (HHPHC)",
+      "label_en": "HPHC Program (HHPHC)",
+      "icon": "zap"
+    },
+    "teleinformation/imax": {
+      "label_fr": "Intensité maximale (IMAX)",
+      "label_en": "RMS current peak (IMAX)",
+      "icon": "zap"
+    },
+    "teleinformation/imax1": {
+      "label_fr": "Intensité maximale (IMAX1)",
+      "label_en": "RMS current peak (IMAX1)",
+      "icon": "zap"
+    },
+    "teleinformation/adps": {
+      "label_fr": "Alerte dépassement puissance souscrite (ADPS)",
+      "label_en": "Subscribed Power Exceeded Warning (ADPS)",
+      "icon": "zap"
+    },
+    "teleinformation/imax2": {
+      "label_fr": "Intensité maximale (IMAX2)",
+      "label_en": "RMS current peak (IMAX2)",
+      "icon": "zap"
+    },
+    "teleinformation/imax3": {
+      "label_fr": "Intensité maximale (IMAX3)",
+      "label_en": "RMS current peak (IMAX3)",
+      "icon": "zap"
+    },
+    "teleinformation/adir1": {
+      "label_fr": "Alerte de surcourant (ADIR1)",
+      "label_en": "Overcurrent alert (ADIR1)",
+      "icon": "zap"
+    },
+    "teleinformation/adir2": {
+      "label_fr": "Alerte de surcourant (ADIR2)",
+      "label_en": "Overcurrent alert (ADIR2)",
+      "icon": "zap"
+    },
+    "teleinformation/adir3": {
+      "label_fr": "Alerte de surcourant (ADIR3)",
+      "label_en": "Overcurrent alert (ADIR3)",
+      "icon": "zap"
+    },
+    "television/binary": {
+      "label_fr": "Power",
+      "label_en": "Power",
+      "icon": "power"
+    },
+    "television/source": {
+      "label_fr": "Source",
+      "label_en": "Source",
+      "icon": "airplay"
+    },
+    "television/channel": {
+      "label_fr": "Chaîne",
+      "label_en": "Channel",
+      "icon": "hash"
+    },
+    "television/guide": {
+      "label_fr": "Guide",
+      "label_en": "Guide",
+      "icon": "book-open"
+    },
+    "television/menu": {
+      "label_fr": "Menu",
+      "label_en": "Menu",
+      "icon": "menu"
+    },
+    "television/volume-up": {
+      "label_fr": "Augmenter volume",
+      "label_en": "Volume up",
+      "icon": "volume-2"
+    },
+    "television/volume-mute": {
+      "label_fr": "Muet",
+      "label_en": "Mute",
+      "icon": "volume-x"
+    },
+    "television/volume-down": {
+      "label_fr": "Diminuer volume",
+      "label_en": "Volume down",
+      "icon": "volume"
+    },
+    "television/volume": {
+      "label_fr": "Volume",
+      "label_en": "Volume",
+      "icon": "volume-1"
+    },
+    "television/channel-up": {
+      "label_fr": "Chaîne suivante",
+      "label_en": "Channel up",
+      "icon": "chevron-up"
+    },
+    "television/channel-previous": {
+      "label_fr": "Dernière chaîne",
+      "label_en": "Previous channel",
+      "icon": "chevrons-left"
+    },
+    "television/channel-down": {
+      "label_fr": "Chaîne précédente",
+      "label_en": "Channel down",
+      "icon": "chevron-down"
+    },
+    "television/tools": {
+      "label_fr": "Outils",
+      "label_en": "Tools",
+      "icon": "settings"
+    },
+    "television/info": {
+      "label_fr": "Info",
+      "label_en": "Info",
+      "icon": "info"
+    },
+    "television/return": {
+      "label_fr": "Retour",
+      "label_en": "Return",
+      "icon": "rotate-ccw"
+    },
+    "television/exit": {
+      "label_fr": "Quitter",
+      "label_en": "Exit",
+      "icon": "x"
+    },
+    "television/up": {
+      "label_fr": "Haut",
+      "label_en": "Up",
+      "icon": "chevron-up"
+    },
+    "television/down": {
+      "label_fr": "Bas",
+      "label_en": "Down",
+      "icon": "chevron-down"
+    },
+    "television/left": {
+      "label_fr": "Gauche",
+      "label_en": "Left",
+      "icon": "chevron-left"
+    },
+    "television/right": {
+      "label_fr": "Droite",
+      "label_en": "Right",
+      "icon": "chevron-right"
+    },
+    "television/enter": {
+      "label_fr": "Entrer",
+      "label_en": "Enter",
+      "icon": "corner-down-left"
+    },
+    "television/rewind": {
+      "label_fr": "Retour rapide",
+      "label_en": "Rewind",
+      "icon": "rewind"
+    },
+    "television/forward": {
+      "label_fr": "Avance rapide",
+      "label_en": "Forward",
+      "icon": "fast-forward"
+    },
+    "television/play": {
+      "label_fr": "Lecture",
+      "label_en": "Play",
+      "icon": "play"
+    },
+    "television/pause": {
+      "label_fr": "Pause",
+      "label_en": "Pause",
+      "icon": "pause"
+    },
+    "television/stop": {
+      "label_fr": "Stop",
+      "label_en": "Stop",
+      "icon": "square"
+    },
+    "television/previous": {
+      "label_fr": "Précédent",
+      "label_en": "Previous",
+      "icon": "arrow-left"
+    },
+    "television/next": {
+      "label_fr": "Suivant",
+      "label_en": "Next",
+      "icon": "arrow-right"
+    },
+    "television/record": {
+      "label_fr": "Enregistrer",
+      "label_en": "Record",
+      "icon": "circle"
+    },
+    "temperature-sensor/decimal": {
+      "label_fr": "Température",
+      "label_en": "Temperature",
+      "icon": "thermometer"
+    },
+    "temperature-sensor/min": {
+      "label_fr": "Température minimale",
+      "label_en": "Minimum temperature",
+      "icon": "thermometer"
+    },
+    "temperature-sensor/max": {
+      "label_fr": "Température maximale",
+      "label_en": "Maximum temperature",
+      "icon": "thermometer"
+    },
+    "temperature-sensor/average": {
+      "label_fr": "Température moyenne",
+      "label_en": "Average temperature",
+      "icon": "thermometer"
+    },
+    "temperature-sensor/probe": {
+      "label_fr": "Température sonde",
+      "label_en": "Probe temperature",
+      "icon": "thermometer"
+    },
+    "thermostat/target-temperature": {
+      "label_fr": "Température de consigne",
+      "label_en": "Thermostat Temperature",
+      "icon": "thermometer"
+    },
+    "thermostat/mode": {
+      "label_fr": "Mode du thermostat",
+      "label_en": "Thermostat Mode",
+      "icon": "settings"
+    },
+    "thermostat/preset": {
+      "label_fr": "Preset du thermostat",
+      "label_en": "Thermostat Preset",
+      "icon": "sliders"
+    },
+    "thermostat/operating-state": {
+      "label_fr": "État de fonctionnement du thermostat",
+      "label_en": "Thermostat Operating State",
+      "icon": "power"
+    },
+    "unknown/binary": {
+      "label_fr": "Binaire (on/off)",
+      "label_en": "Binary (on/off)",
+      "icon": "help-circle"
+    },
+    "unknown/unknown": {
+      "label_fr": "Inconnu",
+      "label_en": "Unknown",
+      "icon": "help-circle"
+    },
+    "uv-sensor/integer": {
+      "label_fr": "Indice UV",
+      "label_en": "UV Index",
+      "icon": "sun"
+    },
+    "vibration-sensor/binary": {
+      "label_fr": "Vibration (Oui/Non)",
+      "label_en": "Vibrate (yes/no)",
+      "icon": "alert-circle"
+    },
+    "vibration-sensor/status": {
+      "label_fr": "Etat",
+      "label_en": "Status",
+      "icon": "alert-circle"
+    },
+    "vibration-sensor/tilt-angle": {
+      "label_fr": "Angle d'inclinaison",
+      "label_en": "Tilt Angle",
+      "icon": "rotate-cw"
+    },
+    "vibration-sensor/acceleration-x": {
+      "label_fr": "Accélération X",
+      "label_en": "Acceleration X",
+      "icon": "zap"
+    },
+    "vibration-sensor/acceleration-y": {
+      "label_fr": "Accélération Y",
+      "label_en": "Acceleration Y",
+      "icon": "zap"
+    },
+    "vibration-sensor/acceleration-z": {
+      "label_fr": "Accélération Z",
+      "label_en": "Acceleration Z",
+      "icon": "zap"
+    },
+    "vibration-sensor/angle-x": {
+      "label_fr": "Angle X",
+      "label_en": "Angle X",
+      "icon": "rotate-cw"
+    },
+    "vibration-sensor/angle-y": {
+      "label_fr": "Angle Y",
+      "label_en": "Angle Y",
+      "icon": "rotate-cw"
+    },
+    "vibration-sensor/angle-z": {
+      "label_fr": "Angle Z",
+      "label_en": "Angle Z",
+      "icon": "rotate-cw"
+    },
+    "vibration-sensor/bed-activity": {
+      "label_fr": "Activité Lit",
+      "label_en": "Bed Activity",
+      "icon": "moon"
+    },
+    "voc-sensor/decimal": {
+      "label_fr": "COV (Décimale)",
+      "label_en": "VOC (decimal)",
+      "icon": "bar-chart-2"
+    },
+    "voc-index-sensor/integer": {
+      "label_fr": "Indice COV Sensirion (entier)",
+      "label_en": "Sensirion VOC Index (integer)",
+      "icon": "bar-chart-2"
+    },
+    "voc-matter-index-sensor/integer": {
+      "label_fr": "Indice COV",
+      "label_en": "VOC Index",
+      "icon": "bar-chart-2"
+    },
+    "no2-matter-index-sensor/integer": {
+      "label_fr": "Indice NO₂",
+      "label_en": "NO₂ Index",
+      "icon": "bar-chart-2"
+    },
+    "volume-sensor/decimal": {
+      "label_fr": "Volume (décimale)",
+      "label_en": "Volume (decimal)",
+      "icon": "package"
+    },
+    "volume-sensor/integer": {
+      "label_fr": "Volume (entier)",
+      "label_en": "Volume (integer)",
+      "icon": "package"
+    },
+    "vacuum-cleaner/state": {
+      "label_fr": "État opérationnel",
+      "label_en": "Operational State",
+      "icon": "disc"
+    },
+    "vacuum-cleaner/run-mode": {
+      "label_fr": "Mode de fonctionnement",
+      "label_en": "Run Mode",
+      "icon": "settings"
+    },
+    "vacuum-cleaner/clean-mode": {
+      "label_fr": "Mode de nettoyage",
+      "label_en": "Clean Mode",
+      "icon": "settings"
+    },
+    "vacuum-cleaner/dock": {
+      "label_fr": "Retour à la base",
+      "label_en": "Return to Dock",
+      "icon": "home"
+    },
+    "text/text": {
+      "label_fr": "Texte",
+      "label_en": "Text",
+      "icon": "type"
+    },
+    "text/select": {
+      "label_fr": "Sélection",
+      "label_en": "Selection",
+      "icon": "list"
+    },
+    "input/binary": {
+      "label_fr": "Etat de l'entrée",
+      "label_en": "State of input",
+      "icon": "arrow-right"
+    },
+    "water-heater/binary": {
+      "label_fr": "État",
+      "label_en": "State",
+      "icon": "heater"
+    },
+    "water-heater/mode": {
+      "label_fr": "Mode",
+      "label_en": "Mode",
+      "icon": "sliders"
+    },
+    "water-heater/target-temperature": {
+      "label_fr": "Consigne d'eau chaude",
+      "label_en": "Hot water setpoint",
+      "icon": "thermometer"
+    },
+    "water-heater/remaining-hot-water": {
+      "label_fr": "Eau chaude disponible",
+      "label_en": "Available hot water",
+      "icon": "shower-head"
+    },
+    "water-heater/heating": {
+      "label_fr": "Chauffe en cours",
+      "label_en": "Heating",
+      "icon": "flame"
+    },
+    "water-heater/boost": {
+      "label_fr": "Boost",
+      "label_en": "Boost",
+      "icon": "zap"
+    },
+    "water-valve/current-device-status": {
+      "label_fr": "État de la vanne d'eau",
+      "label_en": "Water valve status",
+      "icon": "droplet"
+    },
+    "water-valve/flow": {
+      "label_fr": "Débit d'eau",
+      "label_en": "Water flow",
+      "icon": "droplet"
+    },
+    "water-valve/auto-close-when-water-shortage": {
+      "label_fr": "Fermeture auto si manque d'eau",
+      "label_en": "Auto close on water shortage",
+      "icon": "shield"
+    },
+    "water-valve/valve-work-state": {
+      "label_fr": "Programme d'irrigation en cours",
+      "label_en": "Valve work state",
+      "icon": "activity"
+    },
+    "water-valve/real-time-irrigation-duration": {
+      "label_fr": "Durée d'irrigation en cours",
+      "label_en": "Current irrigation duration",
+      "icon": "clock"
+    },
+    "water-valve/real-time-irrigation-volume": {
+      "label_fr": "Volume d'irrigation en cours",
+      "label_en": "Current irrigation volume",
+      "icon": "droplet"
+    },
+    "water-valve/daily-irrigation-volume": {
+      "label_fr": "Volume d'irrigation quotidien",
+      "label_en": "Daily irrigation volume",
+      "icon": "droplet"
+    }
+  },
+  "note": "pairs = category/type couples the Gladys front can label and draw; a couple missing here shows as 'undefined' or without icon"
+}

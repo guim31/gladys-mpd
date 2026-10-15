@@ -81,3 +81,21 @@ jobs:
           context: .
           platforms: linux/amd64
           push: false
+
+  store:
+    runs-on: ubuntu-latest
+    name: Store checks (manifest)
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false # no git push here
+
+      # The validator requires Node 24.
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Store admission checks
+        run: npx -y github:GladysAssistant/integration-store --skip-image-check .
