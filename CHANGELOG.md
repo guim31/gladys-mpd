@@ -10,6 +10,8 @@ the notes of the version's GitHub Release.
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-10-15
+
 ### Added
 
 - One Gladys device per MPD player (moOde, Volumio, piCorePlayer, MPD), up to
@@ -32,4 +34,5 @@ the notes of the version's GitHub Release.
 - Every text in English, French, German and Spanish; feature names in French
   by default.
 
-[Unreleased]: https://github.com/guim31/gladys-mpd/commits/main
+[Unreleased]: https://github.com/guim31/gladys-mpd/compare/v1.0.1...HEAD
+[1.0.1]: https://github.com/guim31/gladys-mpd/releases/tag/v1.0.1
