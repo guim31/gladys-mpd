@@ -1,0 +1,10 @@
+volume: -1
+repeat: 0
+random: 0
+single: 1
+consume: 1
+playlist: 2
+playlistlength: 0
+mixrampdb: 0.000000
+state: stop
+OK

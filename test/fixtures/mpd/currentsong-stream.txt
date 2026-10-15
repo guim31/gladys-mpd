@@ -1,0 +1,6 @@
+file: http://icecast.example.com/radio-hifi.aac
+Title: Nina Simone - Feeling Good
+Name: Example Radio Hi-Fi
+Pos: 0
+Id: 3
+OK

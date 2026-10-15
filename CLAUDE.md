@@ -16,12 +16,13 @@ its only runtime dependency. It started from the official JavaScript template.
 ```bash
 npm install
 npm test                                  # node --test, the built-in runner
-node --test test/devices.test.js          # one file
-node --test --test-name-pattern "plug"    # tests whose name matches
+node --test test/notification.test.js     # one file
+node --test --test-name-pattern "doorbell"  # tests whose name matches
 npm run lint                              # ESLint
 npm run format:check                      # Prettier, as the CI runs it
 npm run format                            # Prettier, fix in place
 npx github:GladysAssistant/integration-store .   # store admission checks
+node scripts/probe.mjs <host> [port]      # read-only probe of a real MPD (MPD_PASSWORD=…)
 ```
 
 The CI (`.github/workflows/ci.yml`) runs `format:check`, `lint` and `test` on
@@ -31,16 +32,24 @@ pushing.
 ## Architecture
 
 ```
-index.js                          SDK wiring only: handlers registered before connect()
-src/devices/index.js              registry of the device blueprints + dispatch helpers
-src/devices/<type>.js             one device type per file (buildDevice, onPoll, onSetValue...)
+index.js                          SDK wiring only: src/app.js registers the handlers before connect()
+src/app.js                        every SDK handler -> the hub (also used by the tests)
+src/hub.js                        players by slot, devices, states, transports, status, 30 s timer, commands, logs
+src/player.js                     one MPD player: connection in idle, reconnection, readings, commands, notifications
+src/mpd/connection.js             one TCP connection: request queue, idle cut short by noidle, timeouts
+src/mpd/protocol.js               command quoting, answer parsing, ACK -> MpdError with a kind
+src/mpd/model.js                  status / currentsong / listplaylists -> plain objects
+src/devices.js                    one device per player: music features + playlist select, names (4 languages)
 src/scenes.js                     scene action handlers (manifest `scene_actions`)
-src/widgets.js                    dashboard widget handlers (manifest `widgets`)
+src/widgets.js                    dashboard widget `player` (manifest `widgets`)
+src/texts.js                      connection, error, report and action texts (4 languages)
+src/issues.js                     repeated failures logged once (from gladys-subsonic)
 src/config.js                     DEFAULT_CONFIG (mirrors the manifest defaults) + normalization
-src/weather.js                    example driver (Open-Meteo)
+scripts/probe.mjs                 read-only probe of a real player (status, currentsong, listplaylists, idle)
 gladys-assistant-integration.json manifest: name, config_schema, actions, image...
-docs/en.md, docs/fr.md            user documentation, re-hosted by Gladys (mandatory)
+docs/{en,fr,de,es}.md             user documentation, re-hosted by Gladys (en and fr mandatory)
 test/                             node --test, against the SDK's fake Gladys (integration-sdk/testing)
+                                  and helpers/fakeMpd.js (a fake MPD on a real socket)
 .github/scripts/release.mjs       release helpers (manifest bump, changelog), tested in test/
 ```
 
@@ -70,8 +79,9 @@ test/                             node --test, against the SDK's fake Gladys (in
   `type: "provider"`: 5.1.0). `test/manifest.test.js` ties the manifest to the
   code (defaults, action, scene and widget handlers): change both sides
   together.
-- **User-facing text** is bilingual (English and French): action messages,
-  manifest texts, and `docs/en.md` / `docs/fr.md`, kept in sync.
+- **User-facing text** exists in four languages (English, French, German,
+  Spanish): action messages, widget texts, feature names, manifest texts, and
+  `docs/{en,fr,de,es}.md` with the same sections. `test/i18n.test.js` checks it.
 - **Style.** Prettier formats, ESLint catches mistakes. Comments explain why,
   in English. Tests never touch the network.
 
@@ -197,6 +207,68 @@ code de ce dépôt. Compléter ce fichier quand un nouveau piège est découvert
 - Les filtres de scène ne font qu'égalité et appartenance : un seuil reste le travail d'un capteur.
 - **Les clés de widgets, de déclencheurs et d'actions sont figées une fois publiées.**
 - `gladys_version` `>=5.1.0` dès qu'il y a widgets, déclencheurs ou actions de scène.
+
+## Music Player Daemon (propre à ce dépôt)
+
+- **Protocole** (mpd.readthedocs.io, protocol.html) : texte sur TCP 6600, salut `OK MPD x.y.z`, une
+  commande par ligne, réponse `clé: valeur`… puis `OK`, ou une ligne
+  `ACK [code@index] {commande} message` (3 mot de passe, 4 permission, 50 inexistant, 52 système).
+  Arguments entre guillemets, `\` et `"` échappés ; **un saut de ligne dans un argument ouvrirait
+  une deuxième commande** : `formatCommand` le refuse. Client maison sur `node:net`
+  (`src/mpd/`), aucune dépendance ; python-mpd2 (LGPL) lu, rien recopié.
+- **`idle`** : une connexion en `idle` n'expire jamais côté MPD (`connection_timeout`, 60 s, ne vise
+  qu'un client muet) ; c'est pourquoi chaque lecteur garde **une connexion ouverte en idle**
+  (Home Assistant, lui, se reconnecte à chaque commande et sonde). Une commande à envoyer pendant un
+  idle → `noidle`, le serveur répond à l'idle aussitôt (avec ce qui a changé), puis la commande
+  passe. `noidle` hors idle est **ignoré sans réponse** ; toute autre commande pendant un idle fait
+  couper le client. Les changements faits hors idle sont gardés par client et livrés au prochain
+  idle. MPD signale aussi les changements causés par nos propres commandes.
+- **Rafraîchissement** : idle pour le temps réel, plus une lecture `status` + `currentsong` (une liste
+  `command_list_ok_begin`) toutes les 30 s par le minuteur du hub, qui sert aussi de ping (délai de
+  10 s par requête : un lecteur muet ferme la connexion). `onPoll` (appareils publiés
+  `should_poll: true`, 60 000 ms) n'est qu'un repli, sauté si la lecture date de moins de 15 s.
+  Reconnexion après 2, 5, 15, 30 s puis chaque minute.
+- **`status`** : `volume` absent (0.23 sans mixer) ou `-1` (0.21) → pas de valeur ;
+  `single` vaut `0`, `1` ou `oneshot` ; `time: e:t` vaut `t = 0` pour un flux (inconnu, pas zéro) ;
+  `error:` reste jusqu'à la lecture suivante. Une webradio a `Name` (station) et souvent
+  `Title: Artiste - Titre`, sans `duration`.
+- **Notification avec reprise** : `addid` seul d'abord (une adresse refusée ne change rien), puis
+  `consume 0` (sinon le morceau interrompu serait consommé), `repeat 0`, `single 1` (MPD s'arrête
+  après), le volume, `playid`. Fin = arrêté sur elle (ou plus de morceau courant) : `deleteid`,
+  options et volume remis, puis `seekid <id> <elapsed>` (relance la lecture ; une webradio ne se
+  « seek » pas → `playid`) et `pause 1` si c'était en pause. Autre morceau courant = quelqu'un a
+  pris la main : pas de reprise. Lecture sans durée connue après 4 s = webradio : elle continue,
+  seules les options reviennent. Cinq minutes au plus. Une deuxième notification remplace la
+  première et garde l'état sauvé par celle-ci.
+- **`play_notification` reçoit l'adresse en `value` (chaîne)**, et le cœur 5.2.1 **ne transmet pas
+  le `volume`** de l'action « Parler sur une enceinte » aux intégrations externes
+  (`registerProxyService.setValue` n'envoie que `value`, alors que le service Sonos interne le
+  reçoit en `options`) : d'où le champ de configuration « Volume des notifications ». Le cœur ne
+  sauve pas d'état pour une chaîne sur une fonctionnalité non `text`. `onSetValue` a 5 s : la
+  notification n'y est pas attendue jusqu'au bout ; l'action de scène `play_url`
+  (`timeout_seconds` 30) attend le début de lecture pour signaler une adresse injouable.
+- **Playlists = `text/select`** dont les `supported_options` sont les noms (valeurs **chaînes**
+  admises seulement sur `text/select`, **sans espace autour**, non vides, uniques : sinon 400 à la
+  découverte). Le cœur les resynchronise en silence à chaque publication (appareil déjà ajouté),
+  donc republier les appareils quand `stored_playlist` change. Sans `has_feedback`, le cœur
+  enregistre lui-même le choix (`saveStringState`). Le **faux Gladys du SDK ne vérifie pas
+  `supported_options`** : `test/gladys-rules.test.js` reprend les règles de
+  `normalizeSupportedOptions` (5.2.1). Un champ d'action de scène ne peut pas lister les playlists
+  (seul `source: "devices"` est dynamique) : la liste passe par « Contrôler un appareil » sur la
+  fonctionnalité Playlist ; l'action `play_playlist` prend un nom (sans casse ni accents).
+- **Formulaire de widget** : les `label` des `options` d'un champ `select` doivent être des
+  **objets multilingues avec `en`** (`{ en: nom }` pour un nom de playlist) ; une chaîne simple est
+  refusée (`validateWidgetContent` le dit). Le `default` d'un champ se calcule à chaque contenu :
+  le formulaire « Options… » arrive pré-rempli. Le choix « garder la file » vaut `/keep` : MPD
+  interdit `/` dans un nom de playlist.
+- **Identité** : emplacement de configuration (1 à 4), MPD n'a pas d'identifiant ; changer
+  l'adresse d'un emplacement garde l'appareil.
+- **Pochette** : `albumart`/`readpicture` renvoient l'image brute par morceaux, souvent > 300 Ko
+  (limite du cœur) ; pas de redimensionnement sans bibliothèque d'image : pas de pochette.
+- **Faux Gladys** : `fake.transports` renvoie le format du fil (`device_external_id`), pas celui de
+  `publishTransports` (`external_id`).
+- **Non vérifié sur un vrai MPD** : les fixtures `test/fixtures/mpd/` suivent la doc de MPD 0.23 ;
+  `scripts/probe.mjs` (lecture seule) les montre sur un vrai lecteur.
 
 ## Store
 

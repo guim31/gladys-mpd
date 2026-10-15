@@ -1,0 +1,20 @@
+repeat: 0
+random: 0
+single: 0
+consume: 0
+partition: default
+playlist: 9
+playlistlength: 3
+mixrampdb: 0
+state: pause
+song: 1
+songid: 8
+time: 12:180
+elapsed: 12.002
+bitrate: 0
+duration: 180.000
+audio: 48000:24:2
+nextsong: 2
+nextsongid: 9
+error: Failed to decode Untagged/broken.ogg
+OK

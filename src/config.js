@@ -1,45 +1,145 @@
 // -----------------------------------------------------------------------------
-// Integration configuration.
+// Integration configuration: defaults (they mirror the `default` values of the
+// manifest `config_schema`, see test/manifest.test.js) and normalization, so
+// the rest of the code never deals with strings, blanks or `undefined`.
 //
-// The configuration is filled in by the user in Gladys, from the `config_schema`
-// declared in `gladys-assistant-integration.json`. The SDK fetches it for you
-// (`gladys.getConfig()`) and notifies you of every change through
-// `gladys.onConfigUpdated()`.
-//
-// This module only provides defaults and normalizes the received object, so the
-// rest of the code never has to deal with `undefined`.
+// Up to four players, each in its own slot (address, password, name). The
+// slot number is the device identity: MPD exposes no id of its own, and
+// changing the address of a slot (a new IP, a host name instead of an IP)
+// must keep the device, its history and the scenes that use it.
 // -----------------------------------------------------------------------------
 
-// Defaults: they MUST stay consistent with the `default` values declared in the
-// `config_schema` of the manifest.
+export const LANGUAGES = ['en', 'fr', 'de', 'es'];
+
+export const SLOTS = [1, 2, 3, 4];
+
+export const DEFAULT_PORT = 6600;
+
+// Volume of the notifications (play_notification): `keep` leaves the volume
+// as it is, a number sets it for the notification and puts it back after.
+export const NOTIFICATION_VOLUMES = ['keep', '20', '30', '40', '50', '60', '70', '80', '100'];
+
 export const DEFAULT_CONFIG = {
-  latitude: 48.8566, // Paris
-  longitude: 2.3522,
-  unit: 'celsius', // 'celsius' | 'fahrenheit'
-  // Seconds between two reads of the polled sensors. Gladys polls at most once
-  // a minute: slower intervals are applied by skipping polls (see
-  // createPoller in src/devices/index.js).
-  poll_frequency: 300,
-  // Reserved key (NOT in config_schema): because the manifest declares both
-  // 'local' and 'cloud' in its `transports` field, Gladys shows a standard
-  // "Prefer the local connection" toggle and sends the user's choice here.
-  // Read-only for the integration; defaults to true.
-  GLADYS_PREFER_LOCAL: true,
+  player_1_address: '',
+  player_1_password: '',
+  player_1_name: '',
+  player_2_address: '',
+  player_2_password: '',
+  player_2_name: '',
+  player_3_address: '',
+  player_3_password: '',
+  player_3_name: '',
+  player_4_address: '',
+  player_4_password: '',
+  player_4_name: '',
+  notification_volume: 'keep',
+  language: 'fr',
 };
 
+const MAX_NAME_LENGTH = 40;
+
 /**
- * Merge the user config with the defaults.
- * @param {Record<string, unknown>} raw config returned by the SDK
+ * Parse the address typed by the user: a host name or an IP, with an optional
+ * port (`192.0.2.10`, `moode.home:6601`, `[2001:db8::1]:6600`), or what was
+ * copied from another tool (`mpd://host:port`, a trailing slash).
+ * @param {unknown} raw
+ * @returns {{ host: string, port: number }|null} null when unusable
+ */
+export function parseAddress(raw) {
+  if (typeof raw !== 'string') {
+    return null;
+  }
+  let text = raw.trim();
+  if (!text) {
+    return null;
+  }
+  // A scheme is accepted (copied URL) but only the host and port matter.
+  const scheme = /^([a-z][a-z0-9+.-]*):\/\//i.exec(text);
+  if (scheme) {
+    text = text.slice(scheme[0].length);
+  }
+  text = text.replace(/\/.*$/, '');
+  // Credentials in the address would end up in the logs and the device params.
+  if (text.includes('@')) {
+    return null;
+  }
+  let host;
+  let portText = '';
+  const bracketed = /^\[([0-9a-f:.]+)\](?::(\d+))?$/i.exec(text);
+  if (bracketed) {
+    host = bracketed[1];
+    portText = bracketed[2] ?? '';
+  } else if ((text.match(/:/g) ?? []).length > 1) {
+    // A bare IPv6 address: no port possible without brackets.
+    if (!/^[0-9a-f:.]+$/i.test(text)) {
+      return null;
+    }
+    host = text;
+  } else {
+    const [name, port = ''] = text.split(':');
+    host = name;
+    portText = port;
+  }
+  if (!host || !/^[a-z0-9._:-]+$/i.test(host)) {
+    return null;
+  }
+  let port = DEFAULT_PORT;
+  if (portText !== '') {
+    if (!/^\d{1,5}$/.test(portText)) {
+      return null;
+    }
+    port = Number(portText);
+    if (port < 1 || port > 65535) {
+      return null;
+    }
+  }
+  return { host: host.toLowerCase(), port };
+}
+
+/** `host:port` as shown to the user, brackets around an IPv6 address. */
+export const formatAddress = ({ host, port }) =>
+  `${host.includes(':') ? `[${host}]` : host}${port === DEFAULT_PORT ? '' : `:${port}`}`;
+
+/**
+ * @param {Record<string, unknown>} raw the configuration returned by the SDK
  */
 export function normalizeConfig(raw = {}) {
+  const source = raw && typeof raw === 'object' ? raw : {};
+  const text = (key) => (typeof source[key] === 'string' ? source[key].trim() : '');
+  const pick = (key, list) => {
+    const value = source[key] === undefined || source[key] === null ? '' : String(source[key]);
+    return list.includes(value) ? value : DEFAULT_CONFIG[key];
+  };
+
+  const players = [];
+  const invalidSlots = [];
+  for (const slot of SLOTS) {
+    const typed = text(`player_${slot}_address`);
+    if (!typed) {
+      continue;
+    }
+    const address = parseAddress(typed);
+    if (!address) {
+      invalidSlots.push(slot);
+      continue;
+    }
+    players.push({
+      slot,
+      ...address,
+      // Passwords are kept as typed: spaces may be part of them.
+      password:
+        typeof source[`player_${slot}_password`] === 'string'
+          ? source[`player_${slot}_password`]
+          : '',
+      name: text(`player_${slot}_name`).slice(0, MAX_NAME_LENGTH) || null,
+    });
+  }
+
+  const volume = pick('notification_volume', NOTIFICATION_VOLUMES);
   return {
-    ...DEFAULT_CONFIG,
-    ...raw,
-    // Force the types: config may arrive as strings from a form.
-    latitude: Number(raw.latitude ?? DEFAULT_CONFIG.latitude),
-    longitude: Number(raw.longitude ?? DEFAULT_CONFIG.longitude),
-    poll_frequency: Number(raw.poll_frequency ?? DEFAULT_CONFIG.poll_frequency),
-    // The preference is a boolean; anything but an explicit false means true.
-    GLADYS_PREFER_LOCAL: raw.GLADYS_PREFER_LOCAL !== false,
+    players,
+    invalidSlots,
+    notificationVolume: volume === 'keep' ? null : Number(volume),
+    language: LANGUAGES.includes(source.language) ? source.language : DEFAULT_CONFIG.language,
   };
 }
