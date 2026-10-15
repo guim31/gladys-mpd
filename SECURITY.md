@@ -30,6 +30,22 @@ Gladys before reporting a problem.
 
 In scope: the code of this repository and the Docker image it publishes.
 
+What the integration handles:
+
+- **Secrets**: the MPD passwords (the `password` lines of `mpd.conf`) are
+  `secret` fields of the Gladys configuration. The integration reads them from
+  Gladys at startup, keeps them in memory, sends them only to the player they
+  belong to (the MPD `password` command, in clear text: the MPD protocol has
+  no encryption, keep it on your local network), and never writes them to
+  `/data` nor to the logs. Credentials written inside an address to play are
+  removed before any log line.
+- **Stored in `/data`**: nothing.
+- **Network**: one TCP connection per player, to the addresses and ports typed
+  in the configuration, on the local network. The integration opens no port
+  and calls no cloud service. The addresses it asks MPD to play are fetched by
+  the player itself, not by the integration; `file://` addresses are refused.
+
 Out of scope: Gladys Assistant itself (see its
 [security policy](https://github.com/GladysAssistant/Gladys/security/policy)),
-and the third-party services and devices the integration talks to.
+MPD and the systems built on it (moOde, Volumio, piCorePlayer), and the other
+devices and services of your network.

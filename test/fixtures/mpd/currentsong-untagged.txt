@@ -1,0 +1,8 @@
+file: Untagged/track07.mp3
+Last-Modified: 2021-02-14T12:00:00Z
+Format: 44100:16:2
+Time: 180
+duration: 180.000
+Pos: 2
+Id: 9
+OK

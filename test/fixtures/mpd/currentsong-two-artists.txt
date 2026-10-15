@@ -1,0 +1,11 @@
+file: Compilations/Various/01 Track.mp3
+Last-Modified: 2022-05-01T08:00:00Z
+Format: 44100:16:2
+Artist: Artist One
+Artist: Artist Two
+Title: Duet
+Time: 200
+duration: 199.680
+Pos: 0
+Id: 1
+OK

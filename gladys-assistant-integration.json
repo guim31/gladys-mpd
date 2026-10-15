@@ -1,147 +1,542 @@
 {
   "manifest_version": 1,
   "type": "device",
-  "name": "Demo Devices Template",
+  "name": "Music Player Daemon",
   "description": {
-    "en": "Starter template showing sensors, a switch, a dimmable light and a smart plug.",
-    "fr": "Template de démarrage : capteurs, interrupteur, lampe variable et prise connectée."
+    "en": "Control your MPD players (moOde, Volumio, piCorePlayer…): music, volume, playlists, notifications.",
+    "fr": "Pilotez vos lecteurs MPD (moOde, Volumio, piCorePlayer…) : musique, volume, playlists, annonces.",
+    "de": "Steuere deine MPD-Player (moOde, Volumio, piCorePlayer…): Musik, Lautstärke, Playlists, Hinweise.",
+    "es": "Controle sus reproductores MPD (moOde, Volumio, piCorePlayer…): música, volumen, listas, avisos."
   },
   "version": "1.0.0",
-  "docker_image": "ghcr.io/gladysassistant/integration-template-js:1.0.0",
-  "gladys_version": ">=5.1.0",
-  "cover_image": "https://raw.githubusercontent.com/GladysAssistant/integration-template-js/master/cover.png",
-  "categories": ["lighting", "security", "environment"],
-  "transports": ["local", "cloud"],
+  "docker_image": "ghcr.io/guim31/gladys-mpd:1.0.0",
+  "gladys_version": ">=5.2.0",
+  "cover_image": "https://raw.githubusercontent.com/guim31/gladys-mpd/main/cover.png",
+  "categories": ["multimedia"],
+  "transports": ["local"],
   "config_schema": [
     {
       "key": "intro",
       "type": "section",
-      "label": { "en": "Getting started", "fr": "Pour commencer" },
+      "label": {
+        "en": "Your MPD players",
+        "fr": "Vos lecteurs MPD",
+        "de": "Deine MPD-Player",
+        "es": "Sus reproductores MPD"
+      },
       "description": {
-        "en": "The demo weather station reads real data from the free Open-Meteo API: pick the coordinates to observe. No account, no API key.",
-        "fr": "La station météo de démonstration lit de vraies données via l'API gratuite Open-Meteo : choisissez les coordonnées à observer. Pas de compte, pas de clé d'API."
+        "en": "Any Music Player Daemon: a Raspberry Pi with moOde, Volumio, piCorePlayer, or MPD itself. Enter its IP address (port 6600 by default, add :port otherwise) and the password of mpd.conf if there is one. Up to four players.",
+        "fr": "Tout Music Player Daemon : un Raspberry Pi sous moOde, Volumio, piCorePlayer, ou MPD lui-même. Saisissez son adresse IP (port 6600 par défaut, sinon ajoutez :port) et le mot de passe de mpd.conf s'il y en a un. Jusqu'à quatre lecteurs.",
+        "de": "Jeder Music Player Daemon: ein Raspberry Pi mit moOde, Volumio, piCorePlayer oder MPD selbst. Gib seine IP-Adresse ein (standardmäßig Port 6600, sonst :Port anhängen) und das Passwort aus mpd.conf, falls es eines gibt. Bis zu vier Player.",
+        "es": "Cualquier Music Player Daemon: una Raspberry Pi con moOde, Volumio, piCorePlayer o el propio MPD. Introduzca su dirección IP (puerto 6600 por defecto, si no añada :puerto) y la contraseña de mpd.conf si la hay. Hasta cuatro reproductores."
       },
       "links": [
         {
-          "url": "https://open-meteo.com/en/docs",
-          "label": { "en": "Open-Meteo documentation", "fr": "Documentation Open-Meteo" }
+          "url": "https://mpd.readthedocs.io/en/latest/user.html#configuring-the-server",
+          "label": {
+            "en": "Configuring MPD",
+            "fr": "Configurer MPD",
+            "de": "MPD konfigurieren",
+            "es": "Configurar MPD"
+          }
         }
       ]
     },
     {
-      "key": "latitude",
-      "type": "number",
-      "label": { "en": "Latitude", "fr": "Latitude" },
-      "description": {
-        "en": "Latitude used for the demo weather sensor.",
-        "fr": "Latitude utilisée par le capteur météo de démonstration."
+      "key": "player_1_address",
+      "type": "string",
+      "label": {
+        "en": "Player address",
+        "fr": "Adresse du lecteur",
+        "de": "Adresse des Players",
+        "es": "Dirección del reproductor"
       },
-      "placeholder": { "en": "e.g. 48.8566", "fr": "ex. 48.8566" },
-      "required": true,
-      "default": 48.8566,
-      "min": -90,
-      "max": 90
+      "description": {
+        "en": "IP address or name of the player, with :port if MPD does not listen on 6600.",
+        "fr": "Adresse IP ou nom du lecteur, avec :port si MPD n'écoute pas sur le 6600.",
+        "de": "IP-Adresse oder Name des Players, mit :Port, wenn MPD nicht auf 6600 hört.",
+        "es": "Dirección IP o nombre del reproductor, con :puerto si MPD no escucha en el 6600."
+      },
+      "placeholder": {
+        "en": "e.g. 192.168.1.20",
+        "fr": "ex. 192.168.1.20",
+        "de": "z. B. 192.168.1.20",
+        "es": "p. ej. 192.168.1.20"
+      },
+      "required": false
     },
     {
-      "key": "longitude",
-      "type": "number",
-      "label": { "en": "Longitude", "fr": "Longitude" },
-      "description": {
-        "en": "Longitude used for the demo weather sensor.",
-        "fr": "Longitude utilisée par le capteur météo de démonstration."
+      "key": "player_1_password",
+      "type": "secret",
+      "label": {
+        "en": "Password",
+        "fr": "Mot de passe",
+        "de": "Passwort",
+        "es": "Contraseña"
       },
-      "placeholder": { "en": "e.g. 2.3522", "fr": "ex. 2.3522" },
-      "required": true,
-      "default": 2.3522,
-      "min": -180,
-      "max": 180
+      "description": {
+        "en": "The password line of mpd.conf. Empty if MPD has none (the usual case).",
+        "fr": "La ligne password de mpd.conf. Vide si MPD n'en a pas (le cas courant).",
+        "de": "Die password-Zeile aus mpd.conf. Leer, wenn MPD keines hat (der Normalfall).",
+        "es": "La línea password de mpd.conf. Vacía si MPD no tiene (lo habitual)."
+      },
+      "required": false
     },
     {
-      "key": "unit",
+      "key": "player_1_name",
+      "type": "string",
+      "label": {
+        "en": "Name",
+        "fr": "Nom",
+        "de": "Name",
+        "es": "Nombre"
+      },
+      "description": {
+        "en": "Name of the device in Gladys. Empty: \"MPD\" followed by the address.",
+        "fr": "Nom de l'appareil dans Gladys. Vide : « MPD » suivi de l'adresse.",
+        "de": "Name des Geräts in Gladys. Leer: „MPD“ gefolgt von der Adresse.",
+        "es": "Nombre del dispositivo en Gladys. Vacío: «MPD» seguido de la dirección."
+      },
+      "placeholder": {
+        "en": "e.g. Living room",
+        "fr": "ex. Salon",
+        "de": "z. B. Wohnzimmer",
+        "es": "p. ej. Salón"
+      },
+      "required": false
+    },
+    {
+      "key": "player_2",
+      "type": "section",
+      "label": {
+        "en": "Second player",
+        "fr": "Deuxième lecteur",
+        "de": "Zweiter Player",
+        "es": "Segundo reproductor"
+      },
+      "description": {
+        "en": "Same fields, for another MPD player of your network.",
+        "fr": "Mêmes champs, pour un autre lecteur MPD de votre réseau.",
+        "de": "Dieselben Felder, für einen weiteren MPD-Player in deinem Netzwerk.",
+        "es": "Los mismos campos, para otro reproductor MPD de su red."
+      }
+    },
+    {
+      "key": "player_2_address",
+      "type": "string",
+      "label": {
+        "en": "Player address",
+        "fr": "Adresse du lecteur",
+        "de": "Adresse des Players",
+        "es": "Dirección del reproductor"
+      },
+      "placeholder": {
+        "en": "e.g. 192.168.1.21",
+        "fr": "ex. 192.168.1.21",
+        "de": "z. B. 192.168.1.21",
+        "es": "p. ej. 192.168.1.21"
+      },
+      "required": false
+    },
+    {
+      "key": "player_2_password",
+      "type": "secret",
+      "label": {
+        "en": "Password",
+        "fr": "Mot de passe",
+        "de": "Passwort",
+        "es": "Contraseña"
+      },
+      "required": false
+    },
+    {
+      "key": "player_2_name",
+      "type": "string",
+      "label": {
+        "en": "Name",
+        "fr": "Nom",
+        "de": "Name",
+        "es": "Nombre"
+      },
+      "required": false
+    },
+    {
+      "key": "player_3",
+      "type": "section",
+      "label": {
+        "en": "Third player",
+        "fr": "Troisième lecteur",
+        "de": "Dritter Player",
+        "es": "Tercer reproductor"
+      },
+      "description": {
+        "en": "Same fields, for another MPD player of your network.",
+        "fr": "Mêmes champs, pour un autre lecteur MPD de votre réseau.",
+        "de": "Dieselben Felder, für einen weiteren MPD-Player in deinem Netzwerk.",
+        "es": "Los mismos campos, para otro reproductor MPD de su red."
+      }
+    },
+    {
+      "key": "player_3_address",
+      "type": "string",
+      "label": {
+        "en": "Player address",
+        "fr": "Adresse du lecteur",
+        "de": "Adresse des Players",
+        "es": "Dirección del reproductor"
+      },
+      "required": false
+    },
+    {
+      "key": "player_3_password",
+      "type": "secret",
+      "label": {
+        "en": "Password",
+        "fr": "Mot de passe",
+        "de": "Passwort",
+        "es": "Contraseña"
+      },
+      "required": false
+    },
+    {
+      "key": "player_3_name",
+      "type": "string",
+      "label": {
+        "en": "Name",
+        "fr": "Nom",
+        "de": "Name",
+        "es": "Nombre"
+      },
+      "required": false
+    },
+    {
+      "key": "player_4",
+      "type": "section",
+      "label": {
+        "en": "Fourth player",
+        "fr": "Quatrième lecteur",
+        "de": "Vierter Player",
+        "es": "Cuarto reproductor"
+      },
+      "description": {
+        "en": "Same fields, for another MPD player of your network.",
+        "fr": "Mêmes champs, pour un autre lecteur MPD de votre réseau.",
+        "de": "Dieselben Felder, für einen weiteren MPD-Player in deinem Netzwerk.",
+        "es": "Los mismos campos, para otro reproductor MPD de su red."
+      }
+    },
+    {
+      "key": "player_4_address",
+      "type": "string",
+      "label": {
+        "en": "Player address",
+        "fr": "Adresse du lecteur",
+        "de": "Adresse des Players",
+        "es": "Dirección del reproductor"
+      },
+      "required": false
+    },
+    {
+      "key": "player_4_password",
+      "type": "secret",
+      "label": {
+        "en": "Password",
+        "fr": "Mot de passe",
+        "de": "Passwort",
+        "es": "Contraseña"
+      },
+      "required": false
+    },
+    {
+      "key": "player_4_name",
+      "type": "string",
+      "label": {
+        "en": "Name",
+        "fr": "Nom",
+        "de": "Name",
+        "es": "Nombre"
+      },
+      "required": false
+    },
+    {
+      "key": "options",
+      "type": "section",
+      "label": {
+        "en": "Options",
+        "fr": "Options",
+        "de": "Optionen",
+        "es": "Opciones"
+      },
+      "description": {
+        "en": "The notification of a player plays an address (a doorbell sound, an announcement), then puts back what was playing.",
+        "fr": "La notification d'un lecteur joue une adresse (un son de sonnette, une annonce), puis remet ce qui jouait.",
+        "de": "Die Benachrichtigung eines Players spielt eine Adresse ab (ein Klingelton, eine Durchsage) und stellt danach wieder her, was lief.",
+        "es": "La notificación de un reproductor reproduce una dirección (un timbre, un aviso) y luego vuelve a lo que sonaba."
+      }
+    },
+    {
+      "key": "notification_volume",
       "type": "select",
-      "label": { "en": "Temperature unit", "fr": "Unité de température" },
+      "label": {
+        "en": "Notification volume",
+        "fr": "Volume des notifications",
+        "de": "Lautstärke der Benachrichtigungen",
+        "es": "Volumen de las notificaciones"
+      },
+      "description": {
+        "en": "Volume during a notification, back to the previous one after. Gladys does not pass on the volume of its \"Talk on a speaker\" action.",
+        "fr": "Volume pendant une notification, l'ancien revient après. Gladys ne transmet pas le volume de son action « Parler sur une enceinte ».",
+        "de": "Lautstärke während einer Benachrichtigung, danach wieder die vorherige. Gladys gibt die Lautstärke seiner Aktion „Auf einem Lautsprecher sprechen“ nicht weiter.",
+        "es": "Volumen durante una notificación, después vuelve el anterior. Gladys no transmite el volumen de su acción «Hablar en un altavoz»."
+      },
       "required": false,
-      "default": "celsius",
+      "default": "keep",
       "options": [
-        { "value": "celsius", "label": { "en": "Celsius", "fr": "Celsius" } },
-        { "value": "fahrenheit", "label": { "en": "Fahrenheit", "fr": "Fahrenheit" } }
+        {
+          "value": "keep",
+          "label": {
+            "en": "Unchanged",
+            "fr": "Inchangé",
+            "de": "Unverändert",
+            "es": "Sin cambios"
+          }
+        },
+        { "value": "20", "label": { "en": "20 %", "fr": "20 %", "de": "20 %", "es": "20 %" } },
+        { "value": "30", "label": { "en": "30 %", "fr": "30 %", "de": "30 %", "es": "30 %" } },
+        { "value": "40", "label": { "en": "40 %", "fr": "40 %", "de": "40 %", "es": "40 %" } },
+        { "value": "50", "label": { "en": "50 %", "fr": "50 %", "de": "50 %", "es": "50 %" } },
+        { "value": "60", "label": { "en": "60 %", "fr": "60 %", "de": "60 %", "es": "60 %" } },
+        { "value": "70", "label": { "en": "70 %", "fr": "70 %", "de": "70 %", "es": "70 %" } },
+        { "value": "80", "label": { "en": "80 %", "fr": "80 %", "de": "80 %", "es": "80 %" } },
+        { "value": "100", "label": { "en": "100 %", "fr": "100 %", "de": "100 %", "es": "100 %" } }
       ]
     },
     {
-      "key": "poll_frequency",
-      "type": "number",
-      "label": { "en": "Refresh interval (s)", "fr": "Intervalle de rafraîchissement (s)" },
+      "key": "language",
+      "type": "select",
+      "label": {
+        "en": "Language of the devices",
+        "fr": "Langue des appareils",
+        "de": "Sprache der Geräte",
+        "es": "Idioma de los dispositivos"
+      },
       "description": {
-        "en": "How often sensors are polled, in seconds (one minute minimum).",
-        "fr": "Fréquence d'interrogation des capteurs, en secondes (une minute minimum)."
+        "en": "Names given to the features when a device is added (Volume, Playlist…), and language of the messages.",
+        "fr": "Noms donnés aux fonctionnalités quand un appareil est ajouté (Volume, Playlist…), et langue des messages.",
+        "de": "Namen der Funktionen, wenn ein Gerät hinzugefügt wird (Lautstärke, Playlist…), und Sprache der Meldungen.",
+        "es": "Nombres de las funciones al añadir un dispositivo (Volumen, Lista de reproducción…) e idioma de los mensajes."
       },
       "required": false,
-      "default": 300,
-      "min": 60,
-      "max": 3600
+      "default": "fr",
+      "options": [
+        {
+          "value": "en",
+          "label": { "en": "English", "fr": "Anglais", "de": "Englisch", "es": "Inglés" }
+        },
+        {
+          "value": "fr",
+          "label": { "en": "French", "fr": "Français", "de": "Französisch", "es": "Francés" }
+        },
+        {
+          "value": "de",
+          "label": { "en": "German", "fr": "Allemand", "de": "Deutsch", "es": "Alemán" }
+        },
+        {
+          "value": "es",
+          "label": { "en": "Spanish", "fr": "Espagnol", "de": "Spanisch", "es": "Español" }
+        }
+      ]
     }
   ],
   "actions": [
     {
-      "key": "test_weather",
-      "label": { "en": "Test the weather provider", "fr": "Tester le fournisseur météo" },
-      "timeout_seconds": 30
-    },
-    {
-      "key": "identify",
-      "label": { "en": "Identify a device", "fr": "Identifier un appareil" },
-      "fields": [
-        {
-          "key": "device",
-          "type": "select",
-          "source": "devices",
-          "label": { "en": "Device", "fr": "Appareil" },
-          "required": true
-        }
-      ]
-    }
-  ],
-  "scene_triggers": [
-    {
-      "key": "motion_detected",
-      "label": { "en": "Motion detected", "fr": "Mouvement détecté" },
-      "description": {
-        "en": "A demo motion sensor saw a person or an animal move.",
-        "fr": "Un détecteur de démonstration a vu bouger une personne ou un animal."
+      "key": "test_connection",
+      "label": {
+        "en": "Test the connection",
+        "fr": "Tester la connexion",
+        "de": "Verbindung testen",
+        "es": "Probar la conexión"
       },
-      "fields": [
-        {
-          "key": "device",
-          "type": "select",
-          "source": "devices",
-          "label": { "en": "Sensor", "fr": "Détecteur" }
-        },
-        {
-          "key": "target",
-          "type": "multi_select",
-          "label": { "en": "What moved", "fr": "Ce qui a bougé" },
-          "options": [
-            { "value": "person", "label": { "en": "Person", "fr": "Personne" } },
-            { "value": "animal", "label": { "en": "Animal", "fr": "Animal" } }
-          ]
-        }
-      ],
-      "variables": [
-        {
-          "key": "target",
-          "type": "string",
-          "label": { "en": "What moved", "fr": "Ce qui a bougé" }
-        }
-      ]
+      "timeout_seconds": 30
     }
   ],
   "scene_actions": [
     {
-      "key": "identify_device",
-      "label": { "en": "Identify a device", "fr": "Identifier un appareil" },
+      "key": "play_playlist",
+      "label": {
+        "en": "Play an MPD playlist",
+        "fr": "Jouer une playlist MPD",
+        "de": "MPD-Playlist abspielen",
+        "es": "Reproducir una lista de MPD"
+      },
       "description": {
-        "en": "Make a device signal itself (the demo light blinks).",
-        "fr": "Fait se signaler un appareil (la lampe de démonstration clignote)."
+        "en": "Replaces the queue of the player with a playlist saved in MPD, and plays it.",
+        "fr": "Remplace la file d'attente du lecteur par une playlist enregistrée dans MPD, et la joue.",
+        "de": "Ersetzt die Warteschlange des Players durch eine in MPD gespeicherte Playlist und spielt sie ab.",
+        "es": "Sustituye la cola del reproductor por una lista guardada en MPD y la reproduce."
+      },
+      "timeout_seconds": 20,
+      "fields": [
+        {
+          "key": "device",
+          "type": "select",
+          "source": "devices",
+          "label": {
+            "en": "Player",
+            "fr": "Lecteur",
+            "de": "Player",
+            "es": "Reproductor"
+          },
+          "required": true
+        },
+        {
+          "key": "playlist",
+          "type": "string",
+          "label": {
+            "en": "Playlist name",
+            "fr": "Nom de la playlist",
+            "de": "Name der Playlist",
+            "es": "Nombre de la lista"
+          },
+          "description": {
+            "en": "As shown in MPD; capitals and accents do not matter.",
+            "fr": "Tel qu'affiché dans MPD ; majuscules et accents indifférents.",
+            "de": "Wie in MPD angezeigt; Groß- und Kleinschreibung und Akzente egal.",
+            "es": "Tal como aparece en MPD; mayúsculas y acentos indiferentes."
+          },
+          "required": true
+        }
+      ],
+      "outputs": [
+        {
+          "key": "songs",
+          "type": "number",
+          "label": {
+            "en": "Songs in the queue",
+            "fr": "Morceaux dans la file",
+            "de": "Titel in der Warteschlange",
+            "es": "Canciones en la cola"
+          }
+        }
+      ]
+    },
+    {
+      "key": "play_url",
+      "label": {
+        "en": "Play an address on MPD",
+        "fr": "Jouer une adresse sur MPD",
+        "de": "Adresse auf MPD abspielen",
+        "es": "Reproducir una dirección en MPD"
+      },
+      "description": {
+        "en": "A web radio, a doorbell sound, a file of the library. Then the previous music resumes, or the address keeps playing in place of the queue.",
+        "fr": "Une webradio, un son de sonnette, un fichier de la bibliothèque. Puis la musique d'avant reprend, ou l'adresse continue à la place de la file.",
+        "de": "Ein Webradio, ein Klingelton, eine Datei der Bibliothek. Danach geht die vorherige Musik weiter, oder die Adresse läuft anstelle der Warteschlange weiter.",
+        "es": "Una radio web, un timbre, un archivo de la biblioteca. Después vuelve la música anterior, o la dirección sigue en lugar de la cola."
+      },
+      "timeout_seconds": 30,
+      "fields": [
+        {
+          "key": "device",
+          "type": "select",
+          "source": "devices",
+          "label": {
+            "en": "Player",
+            "fr": "Lecteur",
+            "de": "Player",
+            "es": "Reproductor"
+          },
+          "required": true
+        },
+        {
+          "key": "url",
+          "type": "string",
+          "label": {
+            "en": "Address",
+            "fr": "Adresse",
+            "de": "Adresse",
+            "es": "Dirección"
+          },
+          "description": {
+            "en": "http(s):// address, or a path of the MPD music library.",
+            "fr": "Adresse http(s)://, ou chemin dans la bibliothèque musicale de MPD.",
+            "de": "http(s)://-Adresse oder ein Pfad der MPD-Musikbibliothek.",
+            "es": "Dirección http(s):// o ruta de la biblioteca musical de MPD."
+          },
+          "placeholder": {
+            "en": "e.g. sounds/doorbell.mp3",
+            "fr": "ex. sons/sonnette.mp3",
+            "de": "z. B. sounds/klingel.mp3",
+            "es": "p. ej. sonidos/timbre.mp3"
+          },
+          "required": true
+        },
+        {
+          "key": "after",
+          "type": "select",
+          "label": {
+            "en": "Then",
+            "fr": "Ensuite",
+            "de": "Danach",
+            "es": "Después"
+          },
+          "required": false,
+          "default": "resume",
+          "options": [
+            {
+              "value": "resume",
+              "label": {
+                "en": "Resume the previous music",
+                "fr": "Reprendre la musique d'avant",
+                "de": "Vorherige Musik fortsetzen",
+                "es": "Volver a la música anterior"
+              }
+            },
+            {
+              "value": "keep",
+              "label": {
+                "en": "Keep playing it (replaces the queue)",
+                "fr": "Continuer (remplace la file d'attente)",
+                "de": "Weiterspielen (ersetzt die Warteschlange)",
+                "es": "Seguir (sustituye la cola)"
+              }
+            }
+          ]
+        },
+        {
+          "key": "volume",
+          "type": "number",
+          "label": {
+            "en": "Volume (%)",
+            "fr": "Volume (%)",
+            "de": "Lautstärke (%)",
+            "es": "Volumen (%)"
+          },
+          "description": {
+            "en": "Empty: unchanged. With \"Resume\", the previous volume comes back after.",
+            "fr": "Vide : inchangé. Avec « Reprendre », l'ancien volume revient après.",
+            "de": "Leer: unverändert. Mit „Fortsetzen“ kommt die vorherige Lautstärke danach zurück.",
+            "es": "Vacío: sin cambios. Con «Volver», el volumen anterior vuelve después."
+          },
+          "required": false,
+          "min": 0,
+          "max": 100
+        }
+      ]
+    },
+    {
+      "key": "clear_queue",
+      "label": {
+        "en": "Clear the MPD queue",
+        "fr": "Vider la file d'attente MPD",
+        "de": "MPD-Warteschlange leeren",
+        "es": "Vaciar la cola de MPD"
+      },
+      "description": {
+        "en": "Removes every song from the queue of the player, which stops.",
+        "fr": "Retire tous les morceaux de la file d'attente du lecteur, qui s'arrête.",
+        "de": "Entfernt alle Titel aus der Warteschlange des Players, der anhält.",
+        "es": "Quita todas las canciones de la cola del reproductor, que se detiene."
       },
       "timeout_seconds": 15,
       "fields": [
@@ -149,29 +544,188 @@
           "key": "device",
           "type": "select",
           "source": "devices",
-          "label": { "en": "Device", "fr": "Appareil" },
+          "label": {
+            "en": "Player",
+            "fr": "Lecteur",
+            "de": "Player",
+            "es": "Reproductor"
+          },
           "required": true
+        }
+      ]
+    },
+    {
+      "key": "set_random",
+      "label": {
+        "en": "MPD random play",
+        "fr": "Lecture aléatoire MPD",
+        "de": "MPD-Zufallswiedergabe",
+        "es": "Reproducción aleatoria MPD"
+      },
+      "description": {
+        "en": "Turns the random order of the queue on, off, or the other way round.",
+        "fr": "Active, désactive ou inverse l'ordre aléatoire de la file d'attente.",
+        "de": "Schaltet die Zufallsreihenfolge der Warteschlange ein, aus oder um.",
+        "es": "Activa, desactiva o invierte el orden aleatorio de la cola."
+      },
+      "timeout_seconds": 15,
+      "fields": [
+        {
+          "key": "device",
+          "type": "select",
+          "source": "devices",
+          "label": {
+            "en": "Player",
+            "fr": "Lecteur",
+            "de": "Player",
+            "es": "Reproductor"
+          },
+          "required": true
+        },
+        {
+          "key": "mode",
+          "type": "select",
+          "label": {
+            "en": "Random play",
+            "fr": "Lecture aléatoire",
+            "de": "Zufallswiedergabe",
+            "es": "Reproducción aleatoria"
+          },
+          "required": false,
+          "default": "on",
+          "options": [
+            {
+              "value": "on",
+              "label": { "en": "On", "fr": "Activer", "de": "Ein", "es": "Activar" }
+            },
+            {
+              "value": "off",
+              "label": { "en": "Off", "fr": "Désactiver", "de": "Aus", "es": "Desactivar" }
+            },
+            {
+              "value": "toggle",
+              "label": { "en": "Toggle", "fr": "Inverser", "de": "Umschalten", "es": "Invertir" }
+            }
+          ]
         }
       ],
       "outputs": [
         {
-          "key": "signalled",
+          "key": "random",
           "type": "boolean",
-          "label": { "en": "Device signalled", "fr": "Appareil signalé" }
+          "label": {
+            "en": "Random play on",
+            "fr": "Lecture aléatoire active",
+            "de": "Zufallswiedergabe an",
+            "es": "Reproducción aleatoria activa"
+          }
+        }
+      ]
+    },
+    {
+      "key": "set_repeat",
+      "label": {
+        "en": "MPD repeat",
+        "fr": "Répétition MPD",
+        "de": "MPD-Wiederholung",
+        "es": "Repetición MPD"
+      },
+      "description": {
+        "en": "Repeat nothing, the whole queue, or the current song.",
+        "fr": "Ne rien répéter, répéter toute la file, ou le morceau en cours.",
+        "de": "Nichts wiederholen, die ganze Warteschlange oder den aktuellen Titel.",
+        "es": "No repetir nada, repetir toda la cola o la canción actual."
+      },
+      "timeout_seconds": 15,
+      "fields": [
+        {
+          "key": "device",
+          "type": "select",
+          "source": "devices",
+          "label": {
+            "en": "Player",
+            "fr": "Lecteur",
+            "de": "Player",
+            "es": "Reproductor"
+          },
+          "required": true
+        },
+        {
+          "key": "mode",
+          "type": "select",
+          "label": {
+            "en": "Repeat",
+            "fr": "Répétition",
+            "de": "Wiederholung",
+            "es": "Repetición"
+          },
+          "required": false,
+          "default": "all",
+          "options": [
+            {
+              "value": "off",
+              "label": { "en": "Off", "fr": "Désactivée", "de": "Aus", "es": "Desactivada" }
+            },
+            {
+              "value": "all",
+              "label": {
+                "en": "Whole queue",
+                "fr": "Toute la file",
+                "de": "Ganze Warteschlange",
+                "es": "Toda la cola"
+              }
+            },
+            {
+              "value": "one",
+              "label": {
+                "en": "Current song",
+                "fr": "Morceau en cours",
+                "de": "Aktueller Titel",
+                "es": "Canción actual"
+              }
+            }
+          ]
         }
       ]
     }
   ],
   "widgets": [
     {
-      "key": "demo_status",
-      "label": { "en": "Demo status", "fr": "État de la démo" },
-      "description": {
-        "en": "Live temperature and plug power, plug connection and observed location.",
-        "fr": "Température et puissance en direct, connexion de la prise, position observée."
+      "key": "player",
+      "label": {
+        "en": "MPD player",
+        "fr": "Lecteur MPD",
+        "de": "MPD-Player",
+        "es": "Reproductor MPD"
       },
-      "icon": "activity",
-      "action_timeout_seconds": 15
+      "description": {
+        "en": "What plays (title, artist, album), the volume, buttons, and a form for volume and playlist.",
+        "fr": "Ce qui joue (titre, artiste, album), le volume, des boutons et un formulaire volume et playlist.",
+        "de": "Was läuft (Titel, Interpret, Album), Lautstärke, Tasten und ein Formular für Lautstärke, Playlist.",
+        "es": "Lo que suena (título, artista, álbum), el volumen, botones y un formulario de volumen y lista."
+      },
+      "icon": "music",
+      "settings": [
+        {
+          "key": "device",
+          "type": "select",
+          "source": "devices",
+          "label": {
+            "en": "Player",
+            "fr": "Lecteur",
+            "de": "Player",
+            "es": "Reproductor"
+          },
+          "description": {
+            "en": "Empty: the first player of the configuration.",
+            "fr": "Vide : le premier lecteur de la configuration.",
+            "de": "Leer: der erste Player der Konfiguration.",
+            "es": "Vacío: el primer reproductor de la configuración."
+          },
+          "required": false
+        }
+      ],
+      "action_timeout_seconds": 20
     }
   ]
 }

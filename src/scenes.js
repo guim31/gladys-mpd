@@ -1,41 +1,75 @@
 // -----------------------------------------------------------------------------
-// Scene actions (SDK v0.14+, Gladys 5.1+).
+// Scene action handlers (manifest `scene_actions`, Gladys 5.1+). Gladys
+// applies the field defaults and checks the required fields before calling.
 //
-// A scene action is an OPERATION a scene author places in a scene, with
-// parameters and a result: "identify this device", "take a snapshot", "clean
-// these rooms". Each one is declared in the manifest `scene_actions` field
-// (key, label, `fields` in the config_schema grammar, scalar `outputs`) and
-// handled here, keyed by that same `key`; index.js registers every entry with
-// `gladys.onSceneAction(key, ...)`.
+//   - play_playlist: a stored playlist of MPD, by name (the playlist select
+//     of the device offers the list in "Control a device"; a scene action
+//     field cannot list the playlists: only `source: "devices"` is dynamic);
+//   - play_url: an address (web radio, doorbell sound, a file of the
+//     library), then what was playing comes back — or in place of the queue;
+//   - clear_queue, set_random, set_repeat: the queue and its options.
 //
-// Scene TRIGGERS are the other direction ("this happened"): they are fired by
-// the device that observes the event, see src/devices/motionSensor.js.
-//
-// The rules that matter:
-//   - `fields` arrive RESOLVED: scene variables substituted, defaults applied,
-//     validated by the core; a `"source": "devices"` field is the chosen
-//     device external_id;
-//   - resolve an object of the declared `outputs` (scalars only), readable by
-//     the following actions of the scene, or `undefined` for none. Keys not
-//     declared in the manifest are dropped by the core;
-//   - throwing fails THIS action only: the scene logs it and continues. A
-//     scene action is never a condition: return an output and let the scene
-//     author gate on it;
-//   - never fire a scene event as a consequence of a received action: a scene
-//     bound to that event would loop through the integration.
+// Keys, field keys and option values are permanent once published.
 // -----------------------------------------------------------------------------
 
-import { createLogger } from '@gladysassistant/integration-sdk';
-import { signalDevice } from './devices/index.js';
+export const RANDOM_MODES = ['on', 'off', 'toggle'];
+export const REPEAT_OPTIONS = ['off', 'all', 'one'];
+export const AFTER_OPTIONS = ['resume', 'keep'];
 
-const logger = createLogger({ name: 'scenes' });
+/** A volume field of a scene: empty means "do not change". */
+export function parseVolume(raw) {
+  if (raw === undefined || raw === null || raw === '') {
+    return null;
+  }
+  const number = Number(String(raw).trim().replace(',', '.'));
+  if (!Number.isFinite(number)) {
+    return null;
+  }
+  return Math.round(Math.min(100, Math.max(0, number)));
+}
 
 export const SCENE_ACTIONS = {
-  // The ack is awaited under the action's `timeout_seconds` (15 s in the
-  // manifest), counted from the moment the scene reaches the action.
-  async identify_device(gladys, { fields, config }) {
-    logger.info(`Scene action identify_device <- ${fields.device}`);
-    const signalled = await signalDevice(gladys, fields.device, config);
-    return { signalled };
+  async play_playlist(hub, { fields = {} }) {
+    const record = hub.target(fields.device);
+    const { songs } = await hub.playPlaylist(record, fields.playlist);
+    return { songs };
+  },
+
+  async play_url(hub, { fields = {} }) {
+    const record = hub.target(fields.device);
+    const resume = (fields.after ?? 'resume') !== 'keep';
+    await hub.notify(record, fields.url, {
+      volume: parseVolume(fields.volume),
+      resume,
+      wait: resume,
+    });
+    return undefined;
+  },
+
+  async clear_queue(hub, { fields = {} }) {
+    const record = hub.target(fields.device);
+    await hub.command(record, 'clear the queue', (player) => player.clearQueue());
+    return undefined;
+  },
+
+  async set_random(hub, { fields = {} }) {
+    const record = hub.target(fields.device);
+    const mode = RANDOM_MODES.includes(fields.mode) ? fields.mode : 'on';
+    const random = await hub.command(record, `random ${mode}`, async (player) => {
+      if (!player.status) {
+        await player.refresh();
+      }
+      const enabled = mode === 'toggle' ? !player.status.random : mode === 'on';
+      await player.setRandom(enabled);
+      return enabled;
+    });
+    return { random };
+  },
+
+  async set_repeat(hub, { fields = {} }) {
+    const record = hub.target(fields.device);
+    const mode = REPEAT_OPTIONS.includes(fields.mode) ? fields.mode : 'all';
+    await hub.command(record, `repeat ${mode}`, (player) => player.setRepeat(mode));
+    return undefined;
   },
 };

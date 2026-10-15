@@ -1,0 +1,19 @@
+file: Daft Punk/Discovery/04 Digital Love.flac
+Last-Modified: 2023-11-19T21:04:11Z
+Added: 2024-01-03T09:12:40Z
+Format: 44100:16:2
+Artist: Daft Punk
+AlbumArtist: Daft Punk
+ArtistSort: Daft Punk
+Album: Discovery
+Title: Digital Love
+Track: 4
+Date: 2001-03-12
+Genre: Electronic
+Disc: 1
+MUSICBRAINZ_TRACKID: 00000000-0000-0000-0000-000000000000
+Time: 301
+duration: 301.373
+Pos: 3
+Id: 21
+OK

@@ -1,67 +1,214 @@
-# Template de démonstration
+# Music Player Daemon
 
-Ceci est la documentation utilisateur de l'intégration. Gladys ré-héberge ce
-fichier et affiche un lien **Documentation** permanent vers lui dans l'écran
-de configuration (dans la langue de l'utilisateur, avec l'anglais en repli) —
-c'est au moment de configurer que l'utilisateur en a le plus besoin. Gardez
-les courtes indications d'accueil dans les blocs `section` du `config_schema`
-du manifest ; mettez ici le pas-à-pas détaillé (captures d'écran, dépannage…).
+Pilotez vos lecteurs [MPD](https://www.musicpd.org) depuis Gladys : un
+Raspberry Pi branché à un ampli sous moOde, Volumio, piCorePlayer, ou MPD
+lui-même. Lecture, pause, morceau suivant, volume, lancement d'une playlist,
+son de sonnette ou webradio puis retour à la musique, et ce qui joue affiché
+sur le tableau de bord. Tout reste sur votre réseau local : pas de cloud, pas
+de compte.
 
-## Ce que vous obtenez
+> **Développée sans le matériel : vos retours sont les bienvenus.**
+> L'intégration a été construite et testée contre un serveur MPD simulé qui
+> répond comme MPD 0.23, pas contre un vrai lecteur. Dites ce qui marche et ce
+> qui ne marche pas dans les
+> [issues](https://github.com/guim31/gladys-mpd/issues).
 
-Six appareils de démonstration apparaissent après l'installation : une
-station météo (vraies données Open-Meteo), un interrupteur, une lampe
-variable, une prise connectée avec mesure de puissance, un détecteur de
-mouvement et une caméra.
+Cette intégration n'est affiliée ni au projet MPD, ni à moOde, Volumio ou
+piCorePlayer.
 
-## Configuration
+## Ce qu'il vous faut
 
-1. Ouvrez l'onglet **Configuration** de l'intégration.
-2. Renseignez la **latitude** et la **longitude** que la station météo de
-   démonstration doit observer (Paris par défaut), et choisissez votre unité
-   de température. L'**intervalle de rafraîchissement** règle la fréquence
-   de lecture de la station météo et de la puissance de la prise : toutes
-   les 5 minutes par défaut, toutes les minutes au plus.
-3. Enregistrez : les appareils apparaissent dans l'onglet **Découverte**,
-   prêts à être ajoutés.
+- Gladys Assistant **5.2.0** ou plus récent.
+- Un lecteur qui fait tourner **MPD**, joignable depuis Gladys sur le réseau,
+  sur son port MPD (**6600** par défaut). moOde et piCorePlayer (avec son
+  extension MPD) l'exposent d'origine ; MPD lui-même écoute le réseau quand
+  `bind_to_address` vaut `any` ou l'IP de la machine dans `mpd.conf`.
+- Le mot de passe de MPD si `mpd.conf` a une ligne `password`. Il lui faut
+  les droits `read`, `add` et `control`
+  (`password "secret@read,add,control"`). La plupart des lecteurs n'en ont
+  pas.
 
-Le réglage **Préférer la connexion locale** pilote la prise de
-démonstration : elle affiche en badge le canal réellement utilisé (local ou
-cloud), avec un point orange quand elle fonctionne en mode dégradé (local
-refusé, bascule cloud).
+## Mise en route
 
-## Actions
+1. Dans Gladys, ouvrez **Intégrations**, puis **Installer depuis GitHub**, et
+   saisissez `https://github.com/guim31/gladys-mpd` (ou installez **Music
+   Player Daemon** depuis le catalogue quand elle y figure).
+2. Dans **Configuration**, saisissez l'adresse de votre lecteur
+   (`192.168.1.20`, `moode.home`, ou `192.168.1.20:6601` pour un autre port),
+   son mot de passe s'il en a un, et un nom (`Salon`). Jusqu'à trois autres
+   lecteurs en dessous.
+3. Choisissez la **Langue des appareils** (noms des fonctionnalités,
+   messages) et, si vous le souhaitez, le **Volume des notifications**.
+   Enregistrez.
+4. Cliquez sur **Tester la connexion** : une ligne par lecteur, avec la
+   version de MPD, ce qu'il fait, son volume et ses playlists.
+5. Ouvrez l'onglet **Découverte** et ajoutez les appareils.
 
-- **Tester le fournisseur météo** — effectue une requête en direct vers
-  Open-Meteo et affiche la température et l'humidité actuelles sous le
-  bouton.
-- **Identifier un appareil** — choisissez un de vos appareils dans la liste
-  et il se signale (la lampe de démonstration « clignote » dans les logs).
+Utilisez des adresses IP fixes (une réservation DHCP dans votre box) ou des
+noms que votre DNS résout : les noms en `.local` ne se résolvent pas dans le
+conteneur de l'intégration.
 
-## Scènes
+## L'appareil de chaque lecteur
 
-L'intégration ajoute ses propres cartes à l'éditeur de scènes (Gladys 5.1
-ou plus récent), dans la catégorie **Intégrations** :
+Chaque lecteur est un appareil. Gladys le voit comme un lecteur de musique :
+la boîte **Musique** du tableau de bord (lecture, pause, précédent, suivant,
+volume) et l'action de scène **Parler sur une enceinte** fonctionnent avec.
 
-- **Mouvement détecté** (déclencheur) — lance la scène quand un détecteur
-  de démonstration voit bouger quelque chose. Choisissez éventuellement le
-  détecteur et ce qui a bougé (personne, animal) ; laissés vides, toute
-  détection correspond. Les actions suivantes peuvent lire ce qui a bougé
-  avec `{{triggerEvent.data.target}}`.
-- **Identifier un appareil** (action) — fait se signaler l'appareil choisi.
-  Elle indique si l'appareil a pu se signaler, pour que les actions
-  suivantes puissent en dépendre.
+| Fonctionnalité (noms en français) | Ce qu'elle fait                                                                                                    |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Lecture                           | Joue la file d'attente (un morceau en pause reprend où il en était).                                               |
+| Pause                             | Met en pause.                                                                                                      |
+| Morceau précédent                 | Passe au morceau précédent.                                                                                        |
+| Morceau suivant                   | Passe au morceau suivant.                                                                                          |
+| Volume                            | 0 à 100 %, tel que MPD le voit. Pas de valeur quand MPD n'a pas de mixer (volume fixe).                            |
+| État de lecture                   | 1 pendant la lecture, 0 en pause ou à l'arrêt. Gardé dans l'historique, utilisable comme déclencheur ou condition. |
+| Playlist                          | La liste des playlists enregistrées dans MPD : en choisir une remplace la file d'attente par elle et la joue.      |
+| Notification                      | Reçoit une adresse à jouer, puis remet ce qui jouait (voir plus bas).                                              |
+
+La liste des playlists suit MPD : une playlist enregistrée ou supprimée sur le
+lecteur apparaît ou disparaît de la liste.
 
 ## Tableau de bord
 
-Ajoutez le widget **État de la démo** à un tableau de bord : il affiche en
-direct la température de la station météo et la puissance de la prise du
-bureau, la connexion utilisée par la prise (en orange si dégradée) et la
-position observée. Son bouton **Identifier la lampe** fait se signaler la
-lampe de démonstration.
+Ajoutez le widget **Lecteur MPD** à un tableau de bord. Dans ses réglages,
+choisissez un lecteur (vide : le premier de la configuration). Il affiche :
+
+- le **titre** du morceau et, en dessous, l'artiste et l'album (ou le nom de
+  la webradio) ;
+- le **volume** en jauge ;
+- l'état (lecture, pause, arrêt), la position dans la file d'attente, la
+  lecture aléatoire et la répétition ;
+- quatre boutons : **Précédent**, **Lecture** ou **Pause**, **Suivant** et
+  **Options…**. Options… ouvre un formulaire rempli avec les valeurs
+  actuelles : le volume, une playlist à jouer, la lecture aléatoire et la
+  répétition. Seul ce que vous changez est envoyé.
+
+Le widget suit le lecteur : il se met à jour en moins de dix secondes quand un
+morceau commence, que le volume bouge ou qu'une playlist est enregistrée. Pas
+de pochette (voir Limites).
+
+## Scènes
+
+### Actions
+
+Le lecteur se choisit parmi les appareils de l'intégration.
+
+- **Jouer une playlist MPD** : remplace la file d'attente par une playlist
+  enregistrée dans MPD, d'après son nom (majuscules et accents indifférents),
+  et la joue. Le nombre de morceaux mis en file peut servir dans les actions
+  suivantes de la scène. Un nom inconnu fait échouer l'action avec la liste
+  des playlists. Vous pouvez aussi choisir une playlist dans une liste avec
+  l'action **Contrôler un appareil** du cœur, sur la fonctionnalité
+  **Playlist**.
+- **Jouer une adresse sur MPD** : joue une adresse — une webradio
+  (`http://…`, `https://…`), un son sur un serveur web, ou un fichier de la
+  bibliothèque musicale de MPD (`sons/sonnette.mp3`) — au volume indiqué
+  (vide : inchangé). _Ensuite_ : **Reprendre la musique d'avant** (l'adresse
+  joue une fois, puis ce qui jouait revient, voir plus bas) ou **Continuer
+  (remplace la file d'attente)**. L'action échoue quand MPD ne peut pas lire
+  l'adresse.
+- **Vider la file d'attente MPD** : retire tous les morceaux de la file ; le
+  lecteur s'arrête.
+- **Lecture aléatoire MPD** : activer, désactiver ou inverser. Le résultat
+  (active ou non) peut servir dans les actions suivantes.
+- **Répétition MPD** : désactivée, toute la file, ou le morceau en cours.
+
+### Notifications et « Parler sur une enceinte »
+
+La fonctionnalité **Notification** d'un lecteur, l'action **Jouer une adresse
+sur MPD** avec _Reprendre la musique d'avant_, et l'action **Parler sur une
+enceinte** de Gladys (la voix vient de Gladys Plus) fonctionnent de la même
+façon :
+
+1. l'adresse est ajoutée à la fin de la file d'attente (votre file n'est
+   jamais remplacée) et jouée aussitôt, au **Volume des notifications** de la
+   configuration (ou au volume de l'action) ;
+2. MPD s'arrête après elle ; elle est alors retirée de la file, et le volume
+   et les options (aléatoire, répétition, single, consume) reviennent ;
+3. le morceau qui jouait reprend à la seconde où il a été interrompu ; un
+   morceau en pause reste en pause, un lecteur arrêté reste arrêté.
+
+Une deuxième notification pendant la première la remplace. Si quelqu'un
+prend la main sur le lecteur entre-temps (un autre morceau, le suivant), la
+notification se termine sans toucher à la musique. Une notification qui joue
+encore au bout de cinq minutes est arrêtée et la musique revient. Une webradio
+envoyée en notification n'est pas une notification : elle continue de jouer
+(son adresse reste dans la file).
+
+L'action **Parler sur une enceinte** a un curseur de volume, mais Gladys ne le
+transmet pas aux intégrations externes : utilisez le **Volume des
+notifications** de la configuration.
+
+### Idées de scènes
+
+- **Sonnette** : quand le bouton de sonnette est appuyé, _Jouer une adresse
+  sur MPD_ `sons/sonnette.mp3` sur le lecteur du salon, volume 70, puis
+  reprendre la musique d'avant.
+- **Radio-réveil** : à 7 h en semaine, _Jouer une adresse sur MPD_ avec
+  l'adresse de votre radio préférée, _Continuer_, volume 25 ; à 7 h 45, la
+  fonctionnalité **Pause**.
+- **Personne à la maison** : quand la maison devient vide, la fonctionnalité
+  **Pause** de chaque lecteur.
+- **La lumière suit la musique** : quand l'**État de lecture** du lecteur du
+  salon passe à 1 après le coucher du soleil, allumer les lampes du salon.
+- **Soirée** : au coucher du soleil, _Jouer une playlist MPD_ « Apéro », puis
+  _Lecture aléatoire MPD_ activée.
+
+## Rafraîchissement
+
+L'intégration garde une connexion ouverte vers chaque lecteur et attend ses
+changements (la commande `idle` de MPD) : ce qui se passe sur le lecteur,
+depuis Gladys ou une autre application, arrive dans Gladys en moins d'une
+seconde. En plus, chaque lecteur est relu toutes les 30 secondes (cela vérifie
+aussi qu'il répond toujours), et une valeur inchangée est renvoyée toutes les
+six heures pour que Gladys ne l'affiche jamais comme ancienne. Seuls les
+changements sont envoyés à Gladys.
+
+Un lecteur qui ne répond plus est affiché injoignable (badge de transport de
+l'appareil, état de connexion de l'intégration), et l'intégration réessaie :
+après 2, 5, 15, 30 secondes, puis chaque minute. Rien à faire quand il
+revient.
+
+MPD n'a pas de quota : l'intégration envoie quelques commandes par changement
+et deux toutes les 30 secondes, sur une connexion par lecteur.
 
 ## Dépannage
 
-L'intégration journalise tout ce qu'elle fait : consultez les logs de
-l'intégration depuis l'interface Gladys (ou `docker logs` sur l'hôte) avec
-`LOG_LEVEL=debug` pour le détail complet.
+- **« ne répond pas »** : vérifiez l'adresse et le port (6600, ou celui de
+  `port` dans `mpd.conf`), que MPD écoute le réseau (`bind_to_address`) et
+  qu'aucun pare-feu ne bloque le port entre Gladys et le lecteur.
+- **« mot de passe refusé »** ou **« un mot de passe est nécessaire »** :
+  saisissez le mot de passe de la ligne `password` de `mpd.conf` ; il lui
+  faut les droits `read`, `add` et `control`.
+- **« aucun serveur MPD à cette adresse et ce port »** : autre chose répond
+  sur ce port (une interface web, par exemple) : MPD écoute le 6600 par
+  défaut.
+- **Le volume reste vide** : MPD n'a pas de mixer (`mixer_type "none"` dans
+  moOde pour un DAC à volume fixe, par exemple) : changez le volume sur
+  l'ampli.
+- **Une notification ne joue pas** : l'adresse doit être joignable depuis le
+  lecteur lui-même (pas depuis Gladys), dans un format que MPD sait décoder ;
+  un fichier de la bibliothèque se donne par son chemin dans la bibliothèque.
+  **Tester la connexion** et les logs de l'intégration disent pourquoi MPD
+  l'a refusée.
+- **La liste Playlist est vide** : MPD n'a pas de `playlist_directory`, ou
+  aucune playlist n'est encore enregistrée.
+- **Plus de détails** : les logs de l'intégration (Intégrations → Music Player
+  Daemon → Journaux) montrent les connexions, les pertes et les retours, et une
+  ligne par commande. Relancez le conteneur avec `LOG_LEVEL=debug` pour voir
+  chaque changement reçu et chaque lecture. Les mots de passe ne sont jamais
+  écrits.
+
+## Limites
+
+- Jusqu'à quatre lecteurs. Un lecteur est connu par son emplacement dans la
+  configuration : changer son adresse garde l'appareil et son historique.
+- Pas de pochette dans le widget : MPD l'envoie sans la réduire, souvent
+  au-delà de ce que Gladys accepte.
+- Pas de navigation dans la bibliothèque musicale : playlists, adresses et
+  chemins de la bibliothèque seulement.
+- Pas de regroupement de lecteurs (Snapcast) ni de choix des sorties.
+- MPD ne se découvre pas tout seul sur le réseau : saisissez les adresses.
+- Le volume de l'action **Parler sur une enceinte** n'est pas transmis par
+  Gladys (le **Volume des notifications** s'applique).
+- Gladys 5.2.0 ou plus récent (le formulaire **Options…** du widget).
