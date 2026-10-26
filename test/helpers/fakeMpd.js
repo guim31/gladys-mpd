@@ -493,6 +493,15 @@ export class FakeMpd {
           this.commands.deleteid(String(id));
         }
       },
+      playlistid: (id) => {
+        const index = this.indexOf(id);
+        return this.songText(this.queue[index], index);
+      },
+      prioid: (priority, ...ids) => {
+        for (const id of ids) {
+          this.queue[this.indexOf(id)].priority = Number(priority);
+        }
+      },
       seekcur: (time) => {
         if (this.state === 'stop') {
           throw new Ack(55, 'Not playing');

@@ -292,8 +292,14 @@ code de ce dépôt. Compléter ce fichier quand un nouveau piège est découvert
 - **Ids des MediaItems** : `song:<chemin ou URL>`, `dir:<chemin>`, `playlist:<nom>`,
   `artist:<nom>`, `album:` + JSON `[albumartist|artist, nom, album]`, `gladys:<racine>`. Un id de
   plus de 512 caractères : ligne neutre en navigation, `queue:<Id>` dans la file (jouée par
-  index). « Remplacer » ajoute d'abord en fin de file puis supprime l'ancienne plage et joue : un
-  id périmé ne vide rien.
+  index). « Remplacer » ajoute d'abord en fin de file (`addid`, Ids gardés), relit la position du
+  premier nouvel Id (`playlistid`), supprime ce qui le précède et fait `playid` : un id périmé ne
+  vide rien, et une file qui bouge entre-temps (`consume`, autre client) ne décale rien. Un refus
+  au milieu retire ce qui a été ajouté (l'ACK d'une liste porte les réponses d'avant :
+  `err.results`). « À la suite » en lecture aléatoire : `prioid 255 <ids>` (vérifié en 0.24).
+  Navigation : les lignes ne deviennent MediaItems qu'**après** la coupe de la page (le SDK ne
+  garde que les 1000 dernières URL de `artworkKey` : un niveau de milliers d'albums effaçait les
+  clés de la page affichée, relecture).
 - **Pochettes** : `readpicture` (0.22+, image intégrée ; répond OK **sans** morceau binaire quand il
   n'y en a pas) puis `albumart` (0.21+, fichier du dossier ; accepte un **dossier terminé par `/`**,
   pas sans). Réponse `size`, `type`, `binary: n` puis n octets bruts : la connexion lit des Buffer
@@ -303,8 +309,10 @@ code de ce dépôt. Compléter ce fichier quand un nouveau piège est découvert
   L'état `artwork` n'est publié que si la recherche (2 s au plus, mémorisée 10 min par morceau)
   trouve une image ; les listes donnent une clé sans vérifier (un refus montre l'icône). Réduction
   par `artwork-resize.js` (copié de gladys-mopidy, autonome) ; copie réduite gardée par image
-  (taille + empreinte du premier morceau) : les 12 titres d'un album à image intégrée ne sont
-  réduits qu'une fois, et la suite de l'image n'est même pas relue.
+  (taille + empreinte du premier morceau, déjà vu par la recherche) : les 12 titres d'un album à
+  image intégrée ne sont réduits qu'une fois, et l'image n'est même pas relue. Une recherche qui
+  dépasse les 2 s continue (une seule par morceau), se mémorise et relance une lecture à son
+  arrivée. La seconde connexion n'est fermée qu'une fois sa file vide.
 - **Faux Gladys** : `fake.transports` renvoie le format du fil (`device_external_id`), pas celui de
   `publishTransports` (`external_id`).
 - **Banc** (`~/gladys-dev/scratch-mpd`, hors dépôt) : image `alpine:3.22` + `apk add mpd`

@@ -118,6 +118,16 @@ export class MpdHub {
       if (!server || record.signature !== signature(server)) {
         record.player.removeAllListeners();
         record.player.stop();
+        if (!server && this.isCreated(slot)) {
+          // A player removed from the configuration: shown stopped.
+          await this.gladys
+            .publishNowPlaying(
+              deviceIds(this.gladys, slot).device,
+              { playback_state: MUSIC_PLAYBACK_STATE.IDLE, position: 0 },
+              { featureExternalIds: nowPlayingIds(this.gladys, slot) },
+            )
+            .catch(() => {});
+        }
         this.records.delete(slot);
         this.transports.delete(deviceIds(this.gladys, slot).device);
       }
@@ -327,7 +337,13 @@ export class MpdHub {
    */
   async publishStates(record) {
     const { player } = record;
-    if (!player.status || !this.isCreated(record.server.slot)) {
+    if (!this.isCreated(record.server.slot)) {
+      return;
+    }
+    // Never read (first attempt still running, or offline since the start):
+    // nothing known yet, but an offline player must not stay "playing" from
+    // what Gladys kept of a previous run.
+    if (!player.status && (player.connected || player.error === null)) {
       return;
     }
     const { slot } = record.server;

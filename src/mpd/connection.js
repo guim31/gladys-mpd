@@ -272,7 +272,12 @@ export class MpdConnection extends EventEmitter {
       return;
     }
     if (line.startsWith('ACK ')) {
-      this.finish(null, parseAck(line));
+      const error = parseAck(line);
+      if (head.type === 'list') {
+        // The answers of the commands that ran before the failing one.
+        error.results = head.results;
+      }
+      this.finish(null, error);
       return;
     }
     if (line === 'list_OK' && head.type === 'list') {

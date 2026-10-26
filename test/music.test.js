@@ -391,12 +391,12 @@ test('artworks: a folder cover as it is, an embedded picture made smaller, read 
   const reads = w.mpd.commandNames().filter((name) => name === 'readpicture').length;
   assert.deepEqual(await art(moon.artwork_key), image);
   const chunks = w.mpd.log.filter(([name, , offset]) => name === 'readpicture' && offset !== '0');
+  assert.equal(chunks.length, 1, 'the rest of the picture read once');
   assert.equal(
-    chunks.length,
-    1,
-    'the rest of the picture read once: its first chunk tells it apart',
+    w.mpd.commandNames().filter((name) => name === 'readpicture').length,
+    reads,
+    'the lookup of the song saw its first chunk: nothing read again',
   );
-  assert.ok(w.mpd.commandNames().filter((name) => name === 'readpicture').length > reads);
 
   // A song without any artwork, and a key Gladys never got from us.
   const [untagged] = valid(await w.fake.musicBrowse(device(w), { parentId: 'dir:Untagged' }));
@@ -416,4 +416,59 @@ test('an MPD without readpicture (before 0.22) still shows the folder cover', as
   const ack = await w.fake.musicGetArtwork(key);
   assert.deepEqual(Buffer.from(ack.data.image, 'base64'), SMALL_JPEG);
   await settle();
+});
+
+test('the artwork keys of a long level: only the page shown is recorded', async (t) => {
+  const w = await world(t);
+  const before = w.gladys.artworkUrls.size;
+  valid(await w.fake.musicBrowse(device(w), { parentId: ROOTS.ALBUMS, offset: 1, limit: 1 }));
+  assert.equal(w.gladys.artworkUrls.size, before + 1);
+});
+
+test('play next during random play: a priority makes the songs play next', async (t) => {
+  const w = await world(t);
+  w.mpd.enqueue(ONE_MORE_TIME, AERODYNAMIC);
+  w.mpd.commands.random('1');
+  w.mpd.commands.play();
+  await eventually(() => state(w, FEATURE_KEYS.SHUFFLE) === 1);
+  const ack = await w.fake.musicPlay(device(w), { id: `song:${FEMME}`, type: 'track' }, 'next');
+  assert.equal(ack.success, true, ack.error);
+  assert.equal(w.mpd.queue.find((song) => song.file === FEMME).priority, 255);
+});
+
+test('a queuing refused midway takes back what it added', async (t) => {
+  const w = await world(t);
+  w.mpd.enqueue(ONE_MORE_TIME);
+  w.mpd.playlists.Broken = [AERODYNAMIC, 'file:///etc/passwd', FEMME];
+  const ack = await w.fake.musicPlay(
+    device(w),
+    { id: 'playlist:Broken', type: 'playlist' },
+    'append',
+  );
+  assert.equal(ack.success, false);
+  assert.deepEqual(
+    w.mpd.queue.map((song) => song.file),
+    [ONE_MORE_TIME],
+  );
+});
+
+test('a player offline from the start, or removed, is shown stopped', async (t) => {
+  const mpd = new FakeMpd();
+  await mpd.listen();
+  const w = await createWorld({ servers: [mpd], connect: false });
+  t.after(() => w.stop());
+  await mpd.goOffline();
+  await w.gladys.connect();
+  await w.app.ready;
+  await createAll(w);
+  await eventually(() => state(w, FEATURE_KEYS.PLAYBACK_STATE) === MUSIC_PLAYBACK_STATE.IDLE);
+
+  await mpd.goOnline();
+  await w.hub.tick();
+  await eventually(() => w.hub.records.get(1).player.connected);
+  mpd.enqueue(ONE_MORE_TIME);
+  mpd.commands.play();
+  await eventually(() => state(w, FEATURE_KEYS.PLAYBACK_STATE) === MUSIC_PLAYBACK_STATE.PLAYING);
+  await w.fake.configUpdated({ language: 'en', player_1_address: '' });
+  await eventually(() => state(w, FEATURE_KEYS.PLAYBACK_STATE) === MUSIC_PLAYBACK_STATE.IDLE);
 });

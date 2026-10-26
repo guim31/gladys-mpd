@@ -267,10 +267,19 @@ async function songsOf(player, parsed) {
   }
 }
 
-/** A page of a whole level, and its size. */
-const page = (items, offset, limit) => ({
-  items: items.slice(offset, offset + limit),
-  total: items.length,
+/**
+ * A page of a whole level, and its size. The rows are made into MediaItems
+ * after the cut: each artwork key is recorded by the SDK (the 1000 most
+ * recent), a level of thousands of albums must not push out those of the
+ * page shown.
+ * @param {any[]} rows
+ * @param {number} offset
+ * @param {number} limit
+ * @param {(row: any) => object} [toItem]
+ */
+const page = (rows, offset, limit, toItem = (row) => row) => ({
+  items: rows.slice(offset, offset + limit).map(toItem),
+  total: rows.length,
 });
 
 /**
@@ -300,51 +309,59 @@ export async function browse(hub, device, { parentId = null, offset = 0, limit =
     record,
     `browse ${safeText(parentId).slice(0, 200)}`,
     async (player) => {
-      let items;
+      const songs = (entries) => entries.filter((entry) => entry.kind === 'file');
+      const song = (entry) => songItem(hub, record, entry.song);
       if (parentId === ROOTS.FOLDERS || parsed.kind === 'dir') {
         const path = parsed.kind === 'dir' ? parsed.value : '';
-        items = parseEntries(await player.query('lsinfo', [path]))
+        const entries = parseEntries(await player.query('lsinfo', [path]))
           // The root lists the stored playlists too: they have their folder.
-          .filter((entry) => path !== '' || entry.kind !== 'playlist')
-          .map((entry) => entryItem(hub, record, entry));
-      } else if (parentId === ROOTS.ARTISTS) {
-        items = parseTagList(await player.query('list', ['artist']), 'Artist').map(artistItem);
-      } else if (parentId === ROOTS.ALBUMS) {
-        items = parseAlbums(await player.query('list', ['album', 'group', 'albumartist'])).map(
-          ({ album, artist }) =>
-            albumItem(hub, record, { tag: 'albumartist', name: artist, album }),
+          .filter((entry) => path !== '' || entry.kind !== 'playlist');
+        return page(entries, offset, limit, (entry) => entryItem(hub, record, entry));
+      }
+      if (parentId === ROOTS.ARTISTS) {
+        const artists = parseTagList(await player.query('list', ['artist']), 'Artist');
+        return page(artists, offset, limit, artistItem);
+      }
+      if (parentId === ROOTS.ALBUMS) {
+        const albums = parseAlbums(await player.query('list', ['album', 'group', 'albumartist']));
+        return page(albums, offset, limit, ({ album, artist }) =>
+          albumItem(hub, record, { tag: 'albumartist', name: artist, album }),
         );
-      } else if (parentId === ROOTS.PLAYLISTS) {
-        items = parsePlaylists(await player.query('listplaylists')).map(playlistItem);
-      } else if (parsed.kind === 'artist') {
-        items = parseTagList(
+      }
+      if (parentId === ROOTS.PLAYLISTS) {
+        const playlists = parsePlaylists(await player.query('listplaylists'));
+        return page(playlists, offset, limit, playlistItem);
+      }
+      if (parsed.kind === 'artist') {
+        const albums = parseTagList(
           await player.query('list', ['album', 'artist', parsed.value]),
           'Album',
-        ).map((album) => albumItem(hub, record, { tag: 'artist', name: parsed.value, album }));
-        if (items.length === 0) {
-          // Songs without an album: the songs themselves.
-          items = await songItems(hub, record, player, ['artist', parsed.value]);
+        );
+        if (albums.length > 0) {
+          return page(albums, offset, limit, (album) =>
+            albumItem(hub, record, { tag: 'artist', name: parsed.value, album }),
+          );
         }
-      } else if (parsed.kind === 'album') {
-        items = await songItems(hub, record, player, albumFilter(parsed.value));
-      } else if (parsed.kind === 'playlist') {
-        items = parseEntries(await player.query('listplaylistinfo', [parsed.value]))
-          .filter((entry) => entry.kind === 'file')
-          .map((entry) => songItem(hub, record, entry.song));
-      } else {
-        throw new UserError(ACTION_TEXT.notPlayable, hub.language);
+        // Songs without an album: the songs themselves.
+        return page(songs(await findSongs(player, ['artist', parsed.value])), offset, limit, song);
       }
-      return page(items, offset, limit);
+      if (parsed.kind === 'album') {
+        const entries = await findSongs(player, albumFilter(parsed.value));
+        return page(songs(entries), offset, limit, song);
+      }
+      if (parsed.kind === 'playlist') {
+        const entries = parseEntries(await player.query('listplaylistinfo', [parsed.value]));
+        return page(songs(entries), offset, limit, song);
+      }
+      throw new UserError(ACTION_TEXT.notPlayable, hub.language);
     },
     { quiet: true },
   );
 }
 
-/** The songs of a `find`, in library order, as MediaItems. */
-async function songItems(hub, record, player, filter) {
-  return parseEntries(await player.query('find', [...filter, 'window', `0:${MAX_QUEUED_SONGS}`]))
-    .filter((entry) => entry.kind === 'file')
-    .map((entry) => songItem(hub, record, entry.song));
+/** The songs of a `find`, in library order (MAX_QUEUED_SONGS at most). */
+async function findSongs(player, filter) {
+  return parseEntries(await player.query('find', [...filter, 'window', `0:${MAX_QUEUED_SONGS}`]));
 }
 
 /**
@@ -550,33 +567,52 @@ export async function artwork(hub, key) {
     throw new Error(`Artwork ${key}: the player is no longer in the configuration`);
   }
   const { player } = record;
+  const kept = (id) => {
+    const cached = hub.preparedArtworks.get(id);
+    if (cached !== undefined) {
+      // Most recent last: the oldest copy goes first.
+      hub.preparedArtworks.delete(id);
+      hub.preparedArtworks.set(id, cached);
+    }
+    return cached;
+  };
+  let lastError = null;
   try {
     for (const source of await artworkSources(player, ref)) {
-      let image;
+      // The lookup saw the first chunk already: a copy may be kept.
+      const known = source.id ? kept(source.id) : undefined;
+      if (known !== undefined) {
+        return known;
+      }
       try {
-        image = await player.readArtwork(source, (id) => hub.preparedArtworks.has(id));
-      } catch (err) {
-        if (err.kind === ERROR_KINDS.COMMAND) {
-          continue; // none there: the next source
+        let image = await player.readArtwork(source, (id) => hub.preparedArtworks.has(id));
+        if (image.data === null) {
+          const cached = kept(image.id);
+          if (cached !== undefined) {
+            return cached;
+          }
+          // Pushed out meanwhile by another artwork: read it whole.
+          image = await player.readArtwork(source);
         }
-        throw err;
+        const base64 = (await prepareArtwork(image.data)).toString('base64');
+        hub.preparedArtworks.set(image.id, base64);
+        if (hub.preparedArtworks.size > PREPARED_KEPT) {
+          hub.preparedArtworks.delete(hub.preparedArtworks.keys().next().value);
+        }
+        return base64;
+      } catch (err) {
+        if (err.kind === ERROR_KINDS.UNREACHABLE) {
+          throw err;
+        }
+        // None there, too large, a format the resize does not read: the next source.
+        lastError = err;
       }
-      const cached = hub.preparedArtworks.get(image.id);
-      if (cached) {
-        // Most recent last: the oldest copy goes first.
-        hub.preparedArtworks.delete(image.id);
-        hub.preparedArtworks.set(image.id, cached);
-        return cached;
-      }
-      const base64 = (await prepareArtwork(image.data)).toString('base64');
-      hub.preparedArtworks.set(image.id, base64);
-      if (hub.preparedArtworks.size > PREPARED_KEPT) {
-        hub.preparedArtworks.delete(hub.preparedArtworks.keys().next().value);
-      }
-      return base64;
     }
   } catch (err) {
     throw new Error(`Artwork ${key}: ${err.message}`, { cause: err });
+  }
+  if (lastError) {
+    throw new Error(`Artwork ${key}: ${lastError.message}`, { cause: lastError });
   }
   throw new Error(`Artwork ${key}: none in MPD`);
 }

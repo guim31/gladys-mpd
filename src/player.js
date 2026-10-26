@@ -146,6 +146,8 @@ export class Player extends EventEmitter {
     this.artwork = null;
     /** Artwork lookups by song file: { source, at }. */
     this.artworkLookups = new Map();
+    /** Lookups running, by song file: one at a time per song. */
+    this.artworkSearches = new Map();
   }
 
   get connected() {
@@ -326,7 +328,14 @@ export class Player extends EventEmitter {
   armSideTimer() {
     clearTimeout(this.sideTimer);
     if (this.timers) {
-      this.sideTimer = setTimeout(() => this.closeSide(), this.timings.sideIdleMs);
+      this.sideTimer = setTimeout(() => {
+        // Still busy (covers read chunk after chunk): wait for it to be idle.
+        if (this.sideConn && this.sideConn.queue.length > 0) {
+          this.armSideTimer();
+          return;
+        }
+        this.closeSide();
+      }, this.timings.sideIdleMs);
       this.sideTimer.unref?.();
     }
   }
@@ -447,7 +456,15 @@ export class Player extends EventEmitter {
     if (file !== this.artworkFor) {
       // Once per song, awaited so that a song change is one batch of
       // states, but briefly: a command waits for this reading.
-      const found = await this.lookupArtwork(file, { timeoutMs: this.timings.artworkTimeoutMs });
+      const found = await this.lookupArtwork(file, {
+        timeoutMs: this.timings.artworkTimeoutMs,
+        // Found after the reading gave up waiting: read again to show it.
+        late: () => {
+          if (this.song?.file === file && this.conn) {
+            this.refresh().catch(() => {});
+          }
+        },
+      });
       this.artwork = found.source;
       // Not read (error, timeout): asked again at the next reading.
       this.artworkFor = found.failed ? null : file;
@@ -557,38 +574,63 @@ export class Player extends EventEmitter {
     const length = this.status?.queueLength ?? 0;
     const current = this.status?.song ?? null;
     const at = mode === 'next' && current !== null ? current + 1 : length;
-    let added = 0;
+    const ids = [];
+    const idOf = (lines) => Number(parsePairs(lines ?? []).find(([key]) => key === 'Id')?.[1]);
     let rest = uris.slice(0, MAX_QUEUED_SONGS);
     while (rest.length > 0) {
-      const base = at + added;
+      const base = at + ids.length;
       try {
-        await conn.commandList(rest.map((uri, index) => ['addid', [uri, base + index]]));
-        added += rest.length;
+        const answers = await conn.commandList(
+          rest.map((uri, index) => ['addid', [uri, base + index]]),
+        );
+        ids.push(...answers.map(idOf));
         rest = [];
       } catch (err) {
-        if (err.kind !== ERROR_KINDS.COMMAND || !Number.isInteger(err.index)) {
+        // An ACK (refused, or a right missing) carries the index of the
+        // failing command; a lost connection does not.
+        if (!Number.isInteger(err.index) || err.kind === ERROR_KINDS.UNREACHABLE) {
           throw err;
         }
+        ids.push(...(err.results ?? []).map(idOf));
         if (err.code !== ACK.NO_EXIST) {
-          if (mode === 'replace' && added + err.index > 0) {
-            // Put the queue back as it was.
-            await conn.command('delete', [`${length}:${length + added + err.index}`]);
+          // Take back what was added: a second try must not queue it twice.
+          const added = ids.filter(Number.isInteger);
+          if (added.length > 0) {
+            await conn.commandList(added.map((id) => ['deleteid', [id]])).catch(() => {});
           }
           throw err;
         }
         logger.debug(`Player ${this.server.slot}: skipped ${rest[err.index]} (${err.message})`);
-        added += err.index;
         rest = rest.slice(err.index + 1);
       }
     }
-    if (mode === 'replace' && added > 0) {
-      const commands = length > 0 ? [['delete', [`0:${length}`]]] : [];
-      commands.push(['play', ['0']]);
+    const added = ids.filter(Number.isInteger);
+    if (added.length === 0) {
+      await this.refresh().catch(() => {});
+      return 0;
+    }
+    const commands = [];
+    if (mode === 'replace') {
+      // The old queue is what is before the first new song now (another
+      // client, or `consume`, may have changed it meanwhile).
+      const [first] = added;
+      const position = Number(
+        parsePairs(await conn.command('playlistid', [first])).find(([key]) => key === 'Pos')?.[1],
+      );
+      if (Number.isInteger(position) && position > 0) {
+        commands.push(['delete', [`0:${position}`]]);
+      }
+      commands.push(['playid', [first]]);
+    } else if (mode === 'next' && this.status?.random) {
+      // Random play ignores the order of the queue: a priority plays them next.
+      commands.push(['prioid', [255, ...added]]);
+    }
+    if (commands.length > 0) {
       await this.run(commands);
     } else {
       await this.refresh().catch(() => {});
     }
-    return added;
+    return added.length;
   }
 
   /**
@@ -612,12 +654,13 @@ export class Player extends EventEmitter {
   /**
    * Where the artwork of a song is: its embedded picture (`readpicture`,
    * MPD ≥ 0.22), else the cover file of its folder (`albumart`, MPD ≥ 0.21).
-   * Remembered a while per song. Never throws.
+   * Remembered a while per song, one lookup at a time per song. Never throws.
    * @param {string|null} file
-   * @param {{ timeoutMs?: number }} [options]
-   * @returns {Promise<{ source: { command: string, uri: string }|null, failed?: boolean }>}
+   * @param {{ timeoutMs?: number, late?: () => void }} [options] late: called
+   *   when a lookup that lost the race against timeoutMs ends
+   * @returns {Promise<{ source: { command: string, uri: string, id: string }|null, failed?: boolean }>}
    */
-  async lookupArtwork(file, { timeoutMs } = {}) {
+  async lookupArtwork(file, { timeoutMs, late } = {}) {
     if (!file || isStream(file)) {
       return { source: null };
     }
@@ -625,27 +668,42 @@ export class Player extends EventEmitter {
     if (known && this.now() - known.at < this.timings.artworkCacheMs) {
       return { source: known.source };
     }
-    let timer;
-    try {
-      const lookup = this.findArtwork(file);
+    let lookup = this.artworkSearches.get(file);
+    if (!lookup) {
+      lookup = this.findArtwork(file)
+        .then((source) => {
+          this.artworkLookups.delete(file);
+          this.artworkLookups.set(file, { source, at: this.now() });
+          if (this.artworkLookups.size > ARTWORK_LOOKUPS_KEPT) {
+            this.artworkLookups.delete(this.artworkLookups.keys().next().value);
+          }
+          return source;
+        })
+        .finally(() => this.artworkSearches.delete(file));
       lookup.catch(() => {}); // still running when the race is lost
+      this.artworkSearches.set(file, lookup);
+    }
+    let timer;
+    let timedOut = false;
+    try {
       const source = timeoutMs
         ? await Promise.race([
             lookup,
             new Promise((resolve, reject) => {
-              timer = setTimeout(() => reject(new Error('timeout')), timeoutMs);
+              timer = setTimeout(() => {
+                timedOut = true;
+                reject(new Error('timeout'));
+              }, timeoutMs);
               timer.unref?.();
             }),
           ])
         : await lookup;
-      this.artworkLookups.delete(file);
-      this.artworkLookups.set(file, { source, at: this.now() });
-      if (this.artworkLookups.size > ARTWORK_LOOKUPS_KEPT) {
-        this.artworkLookups.delete(this.artworkLookups.keys().next().value);
-      }
       return { source };
     } catch (err) {
       logger.debug(`Player ${this.server.slot}: artwork not looked up (${err.message})`);
+      if (timedOut && late) {
+        lookup.then(late, () => {});
+      }
       return { source: null, failed: true };
     } finally {
       clearTimeout(timer);
@@ -659,10 +717,14 @@ export class Player extends EventEmitter {
       ['albumart', file],
     ]) {
       try {
-        const { data } = await conn.binary(command, [uri, 0]);
+        const { lines, data } = await conn.binary(command, [uri, 0]);
         if (data && data.length > 0) {
-          // The cover file of a folder: one source (one key) for its songs.
-          return { command, uri: command === 'albumart' ? folderUri(file) : uri };
+          return {
+            // The cover file of a folder: one source (one key) for its songs.
+            command,
+            uri: command === 'albumart' ? folderUri(file) : uri,
+            id: imageId(lines, data),
+          };
         }
       } catch (err) {
         // 50: none (or not a song of the library); 5: unknown command (old MPD).
@@ -694,14 +756,15 @@ export class Player extends EventEmitter {
         if (offset === 0) {
           throw new MpdError(ERROR_KINDS.COMMAND, 'no artwork', { code: ACK.NO_EXIST });
         }
-        break;
+        // Shorter than announced (the file changed meanwhile): never a cut image.
+        throw new MpdError(ERROR_KINDS.COMMAND, `artwork cut at ${offset} of ${size} bytes`);
       }
       if (size === null) {
         size = Number(parsePairs(lines).find(([key]) => key === 'size')?.[1]);
         if (!Number.isFinite(size) || size > MAX_ARTWORK_BYTES) {
           throw new MpdError(ERROR_KINDS.TOO_LARGE, `artwork of ${size} bytes`);
         }
-        id = `${size}-${createHash('sha1').update(data).digest('hex').slice(0, 16)}`;
+        id = imageId(lines, data);
         if (known(id)) {
           return { data: null, id };
         }
@@ -1048,6 +1111,15 @@ export class Player extends EventEmitter {
     clearTimeout(notification.streamTimer);
     notification.settle(new MpdError(ERROR_KINDS.UNREACHABLE, 'connection lost'));
   }
+}
+
+/**
+ * What tells two images apart without reading them whole: the size MPD
+ * announces and a hash of the first chunk.
+ */
+function imageId(lines, firstChunk) {
+  const size = parsePairs(lines).find(([key]) => key === 'size')?.[1] ?? '?';
+  return `${size}-${createHash('sha1').update(firstChunk).digest('hex').slice(0, 16)}`;
 }
 
 /**
