@@ -36,20 +36,23 @@ export const ERROR_KINDS = Object.freeze({
   PERMISSION: 'permission', // a password is needed (or gives too few rights)
   NOT_MPD: 'not_mpd', // something answers, but not an MPD server
   COMMAND: 'command', // the server refused the command (ACK)
+  TOO_LARGE: 'too_large', // an answer larger than the integration reads (connection closed)
 });
 
 export class MpdError extends Error {
   /**
    * @param {string} kind one of ERROR_KINDS
    * @param {string} message
-   * @param {{ code?: number, command?: string }} [details]
+   * @param {{ code?: number, command?: string, index?: number }} [details]
+   *   index: the command of a command list that failed
    */
-  constructor(kind, message, { code, command } = {}) {
+  constructor(kind, message, { code, command, index } = {}) {
     super(message);
     this.name = 'MpdError';
     this.kind = kind;
     this.code = code;
     this.command = command;
+    this.index = index;
   }
 }
 
@@ -106,6 +109,7 @@ export function parseAck(line) {
     return new MpdError(ERROR_KINDS.COMMAND, line);
   }
   const code = Number(match[1]);
+  const index = Number(match[2]);
   const command = match[3] ?? '';
   const message = match[4] || line;
   let kind = ERROR_KINDS.COMMAND;
@@ -114,7 +118,7 @@ export function parseAck(line) {
   } else if (code === ACK.PERMISSION) {
     kind = ERROR_KINDS.PERMISSION;
   }
-  return new MpdError(kind, message, { code, command });
+  return new MpdError(kind, message, { code, command, index });
 }
 
 /**

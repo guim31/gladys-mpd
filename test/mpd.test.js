@@ -139,6 +139,7 @@ test('current song: tags, a web radio, two artists, no tags at all', async () =>
     name: null,
     id: 21,
     position: 3,
+    duration: 301.373,
   });
   assert.deepEqual(describeSong(file), {
     title: 'Digital Love',

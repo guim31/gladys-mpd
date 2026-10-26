@@ -1,5 +1,5 @@
 {
-  "source": "GladysAssistant/Gladys master 03d4696d (server/utils/constants.js, front/src/utils/consts.js, front i18n), generated 2026-10-09",
+  "source": "GladysAssistant/Gladys master 03d4696d (server/utils/constants.js, front/src/utils/consts.js, front i18n), generated 2026-10-09; music pairs of Gladys v5.3.0 (capabilities/music.md) added 2026-10-25",
   "categories": [
     "air-conditioning",
     "airquality-sensor",
@@ -321,7 +321,15 @@
     "vtic",
     "wind-setting",
     "window-opened",
-    "zoom-position"
+    "zoom-position",
+    "title",
+    "artist",
+    "album",
+    "artwork",
+    "duration",
+    "shuffle",
+    "repeat",
+    "mute"
   ],
   "poll_frequencies_ms": [1000, 2000, 10000, 15000, 30000, 60000],
   "units": [
@@ -2224,6 +2232,51 @@
       "label_fr": "Volume d'irrigation quotidien",
       "label_en": "Daily irrigation volume",
       "icon": "droplet"
+    },
+    "music/title": {
+      "label_fr": "Titre du morceau",
+      "label_en": "Track title",
+      "icon": "music"
+    },
+    "music/artist": {
+      "label_fr": "Artiste",
+      "label_en": "Artist",
+      "icon": "user"
+    },
+    "music/album": {
+      "label_fr": "Album",
+      "label_en": "Album",
+      "icon": "disc"
+    },
+    "music/artwork": {
+      "label_fr": "Pochette",
+      "label_en": "Artwork",
+      "icon": "image"
+    },
+    "music/duration": {
+      "label_fr": "Durée du morceau",
+      "label_en": "Track duration",
+      "icon": "clock"
+    },
+    "music/position": {
+      "label_fr": "Position de lecture",
+      "label_en": "Playback position",
+      "icon": "clock"
+    },
+    "music/shuffle": {
+      "label_fr": "Lecture aléatoire",
+      "label_en": "Shuffle",
+      "icon": "shuffle"
+    },
+    "music/repeat": {
+      "label_fr": "Mode de répétition",
+      "label_en": "Repeat mode",
+      "icon": "repeat"
+    },
+    "music/mute": {
+      "label_fr": "Sourdine",
+      "label_en": "Mute",
+      "icon": "volume-x"
     }
   },
   "note": "pairs = category/type couples the Gladys front can label and draw; a couple missing here shows as 'undefined' or without icon"

@@ -5,6 +5,7 @@
 // -----------------------------------------------------------------------------
 
 import { createLogger } from '@gladysassistant/integration-sdk';
+import * as catalog from './catalog.js';
 import { normalizeConfig } from './config.js';
 import { MpdHub } from './hub.js';
 import { SCENE_ACTIONS } from './scenes.js';
@@ -73,6 +74,15 @@ export function registerHandlers(gladys, options = {}) {
   // had published for the device, everything is sent again now.
   gladys.onDeviceCreated(whenReady((device) => hub.onDeviceCreated(device)));
   gladys.onDeviceUpdated(whenReady((device) => hub.onDeviceCreated(device)));
+
+  // The Gladys 5.3 music panel and the `music.play-media` scene action
+  // (manifest `music`), and the bytes of the artworks.
+  gladys.onMusicBrowse(whenReady((device, options) => catalog.browse(hub, device, options)));
+  gladys.onMusicSearch(whenReady((device, options) => catalog.search(hub, device, options)));
+  gladys.onMusicPlay(whenReady((device, media, mode) => catalog.play(hub, device, media, mode)));
+  gladys.onMusicQueueGet(whenReady((device, options) => catalog.queueGet(hub, device, options)));
+  gladys.onMusicQueuePlay(whenReady((device, index) => catalog.queuePlay(hub, device, index)));
+  gladys.onMusicGetArtwork(whenReady((key) => catalog.artwork(hub, key)));
 
   gladys.onConfigUpdated(
     whenReady(async (newConfig) => {

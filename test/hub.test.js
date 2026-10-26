@@ -52,7 +52,8 @@ test('the states of an added device follow the player through idle, without any 
   const volume = featureId(w.gladys, FEATURE_KEYS.VOLUME);
   const playback = featureId(w.gladys, FEATURE_KEYS.PLAYBACK_STATE);
   assert.equal(w.fake.lastState(volume), 40);
-  assert.equal(w.fake.lastState(playback), 0);
+  // Stopped: IDLE (2) since 1.1.0, PAUSED (0) before.
+  assert.equal(w.fake.lastState(playback), 2);
 
   // Another client (moOde, a phone app) plays a song and turns the volume up.
   w.mpd.enqueue(ONE_MORE_TIME, AERODYNAMIC);
