@@ -154,3 +154,34 @@ test('an ACK fails the command only, the connection goes on', async (t) => {
   );
   assert.deepEqual(await conn.command('ping'), []);
 });
+
+test('binary chunks are read as bytes, text around them as UTF-8', async (t) => {
+  const mpd = await server(t);
+  const conn = connection(t, mpd);
+  await conn.open();
+  await conn.command('binarylimit', [100_000]);
+  const file = 'Air/Moon Safari/01 La femme d’argent.flac';
+  const { lines, data } = await conn.binary('readpicture', [file, 0]);
+  assert.ok(lines.includes('binary: 100000'));
+  assert.equal(data.length, 100_000);
+  const { data: next } = await conn.binary('readpicture', [file, 100_000]);
+  assert.ok(next.length > 0);
+  // The connection goes on, multi-byte text included.
+  const song = await conn.command('find', ['title', 'La femme d’argent']);
+  assert.ok(song.includes('Title: La femme d’argent'));
+  // No picture: no chunk.
+  assert.deepEqual(await conn.binary('readpicture', ['Untagged/track07.mp3', 0]), {
+    lines: [],
+    data: null,
+  });
+});
+
+test('an answer too large closes the connection with TOO_LARGE', async (t) => {
+  const mpd = await server(t);
+  const conn = connection(t, mpd);
+  await conn.open();
+  const closed = new Promise((resolve) => conn.once('close', resolve));
+  mpd.extraCommands = { huge: () => 'file: x\n'.repeat(600_000) };
+  await assert.rejects(conn.command('huge'), (err) => err.kind === ERROR_KINDS.TOO_LARGE);
+  assert.equal((await closed).kind, ERROR_KINDS.TOO_LARGE);
+});

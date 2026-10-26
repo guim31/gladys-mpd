@@ -67,6 +67,12 @@ export const ERROR_TEXT = {
     de: 'Befehl abgelehnt, sieh in den Protokollen nach',
     es: 'orden rechazada, consulte los registros',
   },
+  [ERROR_KINDS.TOO_LARGE]: {
+    en: 'answer too large',
+    fr: 'réponse trop grosse',
+    de: 'Antwort zu groß',
+    es: 'respuesta demasiado grande',
+  },
 };
 
 // The "Test the connection" report, one line per player.
@@ -149,11 +155,54 @@ export const ACTION_TEXT = {
     de: 'Gib den Namen einer in MPD gespeicherten Playlist an.',
     es: 'Indique el nombre de una lista de reproducción guardada en MPD.',
   },
+  folderNotPlayable: {
+    en: 'This entry cannot be played: open it and play what it holds.',
+    fr: 'Cette entrée ne se lit pas : ouvrez-la et lancez ce qu’elle contient.',
+    de: 'Dieser Eintrag kann nicht abgespielt werden: öffne ihn und spiele seinen Inhalt ab.',
+    es: 'Esta entrada no se puede reproducir: ábrala y reproduzca lo que contiene.',
+  },
+  notPlayable: {
+    en: 'MPD found nothing to play for this item (removed from the library?).',
+    fr: 'MPD n’a rien trouvé à lire pour cet élément (retiré de la bibliothèque ?).',
+    de: 'MPD hat für diesen Eintrag nichts zum Abspielen gefunden (aus der Bibliothek entfernt?).',
+    es: 'MPD no ha encontrado nada que reproducir para este elemento (¿eliminado de la biblioteca?).',
+  },
+  notInQueue: {
+    en: 'This item is no longer in the queue.',
+    fr: "Cet élément n'est plus dans la file d'attente.",
+    de: 'Dieser Eintrag ist nicht mehr in der Warteschlange.',
+    es: 'Este elemento ya no está en la cola.',
+  },
+  tooLarge: {
+    en: 'MPD answered with too much at once: open a smaller folder or refine the search.',
+    fr: 'MPD a répondu avec trop de données d’un coup : ouvrez un dossier plus petit ou affinez la recherche.',
+    de: 'MPD hat zu viel auf einmal geantwortet: Öffne einen kleineren Ordner oder verfeinere die Suche.',
+    es: 'MPD ha respondido con demasiados datos a la vez: abra una carpeta más pequeña o afine la búsqueda.',
+  },
   refused: {
     en: 'MPD refused the command, see the logs of the integration.',
     fr: "MPD a refusé la commande, voir les logs de l'intégration.",
     de: 'MPD hat den Befehl abgelehnt, sieh in den Protokollen der Integration nach.',
     es: 'MPD ha rechazado la orden, consulte los registros de la integración.',
+  },
+};
+
+// The entry points of the catalog (Gladys 5.3 music panel).
+export const CATALOG_TEXT = {
+  folders: { en: 'Folders', fr: 'Dossiers', de: 'Ordner', es: 'Carpetas' },
+  artists: { en: 'Artists', fr: 'Artistes', de: 'Künstler', es: 'Artistas' },
+  albums: { en: 'Albums', fr: 'Albums', de: 'Alben', es: 'Álbumes' },
+  playlists: {
+    en: 'Playlists',
+    fr: 'Playlists',
+    de: 'Playlists',
+    es: 'Listas de reproducción',
+  },
+  unknownArtist: {
+    en: 'Unknown artist',
+    fr: 'Artiste inconnu',
+    de: 'Unbekannter Künstler',
+    es: 'Artista desconocido',
   },
 };
 

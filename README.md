@@ -8,18 +8,29 @@ the local network: a Raspberry Pi plugged into an amplifier with
 account.
 
 > **Developed without the hardware: feedback welcome.** The integration is
-> built and tested against a simulated MPD server (a real TCP server speaking
-> the MPD protocol the way MPD 0.23 does), not against a real player. Please
-> report what works and what does not in the
+> built and tested against a real MPD 0.24 running in Docker (null output, no
+> sound card) and a simulated MPD server, not on a moOde, Volumio or
+> piCorePlayer player. Please report what works and what does not in the
 > [issues](https://github.com/guim31/gladys-mpd/issues).
 
 ## Features
 
+- **The Gladys 5.3 music player**: the **Music** box of the dashboard shows
+  the cover, title, artist, album and a progress bar you can drag, with play,
+  pause, stop, previous, next, shuffle, repeat (off, all, one) and the volume;
+  its panels list the **queue** (a tap jumps), **search** the library (songs
+  through MPD, artists, albums and playlists by name) and **browse** it by
+  folders, artists, albums and playlists, to play an item now, next or at the
+  end of the queue. The **Play music on a speaker** scene action of Gladys
+  uses the same panel. Covers come from MPD (embedded picture, else the cover
+  file of the folder), made smaller in pure JavaScript when they are above the
+  300 KB Gladys accepts. MPD has no mute: none is published.
 - **One device per player** (up to four, each with its address, password and
   name), with the music features of Gladys, so it shows as a player in the
   **Music** dashboard box and in the **Talk on a speaker** scene action: play,
-  pause, previous, next, **volume**, **playback state** (in the history, for
-  triggers and conditions), a **playlist** select listing the playlists saved
+  pause, previous, next, **volume**, **playback state** (writable: 0 paused,
+  1 playing, 2 stopped), title, artist, album, artwork, duration, position,
+  shuffle, repeat, a **playlist** select listing the playlists saved
   in MPD (it follows MPD when one is saved or deleted), and a
   **notification** feature.
 - **Notifications that put the music back**: an address (a doorbell sound, a
@@ -50,8 +61,10 @@ account.
 
 ## Requirements
 
-- Gladys Assistant **5.2.0** or later (widgets and scene actions need 5.1.0,
-  the form behind the widget's Options… button 5.2.0).
+- Gladys Assistant **5.3.0** or later (the music player, its panels and the
+  `music` field of the manifest).
+- For the panels: MPD **0.21** or later (`list … group`, `albumart`); covers
+  embedded in the files need **0.22** (`readpicture`).
 - An MPD server reachable from Gladys on its port (6600 by default), with the
   `read`, `add` and `control` rights for the integration (the default without
   password).
@@ -64,7 +77,8 @@ account.
 2. In **Configuration**, enter the address of your player (`192.168.1.20`,
    `moode.home:6600`…), its password if `mpd.conf` has one, and a name; up to
    three more players below. Save, then click **Test the connection**.
-3. Open the **Discover** tab and add the devices.
+3. Open the **Discover** tab and add the devices. A device added with 1.0
+   gets the music features of Gladys 5.3 with **Update** in that tab.
 
 The user guide is in [`docs/en.md`](docs/en.md) (also in
 [French](docs/fr.md), [German](docs/de.md) and [Spanish](docs/es.md)); Gladys
@@ -74,14 +88,14 @@ links it from the Configuration screen.
 
 - A small MPD client written for the integration (`src/mpd/`), on `node:net`:
   greeting, password, command lists (`command_list_ok_begin`), `idle` cut
-  short by `noidle` when a command must go, ACK errors read into kinds. No
-  dependency beyond the Gladys SDK.
+  short by `noidle` when a command must go, ACK errors read into kinds, binary
+  chunks (`albumart`, `readpicture`) read as bytes.
 - Per player (`src/player.js`): the connection, the reconnection (2, 5, 15,
   30 s, then every minute), the readings (`status` + `currentsong` in one
   command list, `listplaylists` when `stored_playlist` changes), the commands
   and the notifications.
-- The hub (`src/hub.js`): devices, states (only the changes, through the SDK's
-  deduplication, plus a heartbeat every 6 hours), transports, connection
+- The hub (`src/hub.js`): devices, states (`publishNowPlaying` of the SDK:
+  only the changes, the position only on a jump), transports, connection
   status, the widget refreshes (at most one per 10 s, the last change kept),
   and the 30 s timer. The devices are published with `should_poll: true` and
   one minute, and `onPoll` is a fallback skipped when the player was read less
@@ -93,6 +107,16 @@ links it from the Configuration screen.
   `pause 1` if it was paused. A notification still playing without a known
   duration after 4 s is a web radio: only the options come back. After five
   minutes, a notification is ended in any case.
+- The music panel (`src/catalog.js`) reads on a second, short-lived
+  connection (the one in idle stays free for the commands): `lsinfo`,
+  `list artist`, `list album group albumartist`, `find … window`,
+  `search any`, `listplaylist(info)`, `playlistinfo start:end`. Media ids name
+  what MPD knows (`song:<path>`, `dir:<path>`, `album:[tag, artist, album]`…),
+  so a scene keeps them. Queuing adds the songs (500 at most) with `addid` at
+  a position, skips a song MPD no longer has, and removes the old queue only
+  once the new songs are in. Covers: `readpicture` then `albumart` (folder
+  path with a trailing `/`), read with `binarylimit` 1 MB, reduced by
+  `src/artwork-resize.js` (from gladys-mopidy), a resized copy kept per image.
 - The playlist select is a `text/select` feature whose `supported_options`
   are the playlists: Gladys syncs them silently on each publication.
 - Nothing is stored in `/data`. Passwords stay in the Gladys configuration and
@@ -110,10 +134,16 @@ five-minute limit), the reconnection, the logs, the widget content against
 the SDK's `validateWidgetContent`, and the conformity of the devices with the
 core (`test/gladys-rules.test.js`).
 
-Not checked: a real MPD, moOde, Volumio or piCorePlayer; a real Gladys (the
-Music box, "Talk on a speaker", the widget and its form). The answers in
-`test/fixtures/mpd/` follow the MPD documentation and were not recorded from a
-player: `node scripts/probe.mjs <host> [port]` (read-only: `status`,
+Checked against a real **MPD 0.24.5** (Alpine, in Docker, null output with a
+software mixer), with a generated library (tags, embedded JPEG and PNG
+pictures, `cover.jpg` files, one of 6.5 MB) and stored playlists, through the
+SDK's fake Gladys, also inside the locked container of the integration: every
+now-playing state, every command, browse, search, the three play modes, the
+queue, the covers, a notification.
+
+Not checked: moOde, Volumio or piCorePlayer; MPD 0.21 to 0.23; a real Gladys
+(the Music box, "Talk on a speaker", the widget and its form). The answers in
+`test/fixtures/mpd/` follow the MPD documentation: `node scripts/probe.mjs <host> [port]` (read-only: `status`,
 `currentsong`, `listplaylists`, `commands`, one `idle` of 10 s; password from
 `MPD_PASSWORD`, never printed) shows the real ones.
 
@@ -122,9 +152,9 @@ player: `node scripts/probe.mjs <host> [port]` (read-only: `status`,
 - Four players at most. A player is identified by its slot in the
   configuration (MPD has no id of its own): changing its address keeps the
   device.
-- No cover art in the widget (sent unresized by MPD, often above the 300 KB
-  the core accepts), no library browsing, no Snapcast grouping, no output
-  selection.
+- No mute (MPD has none), no Snapcast grouping, no output selection. The
+  house widget has no cover (the Music box of Gladys 5.3 has).
+- MPD's search ignores capitals, and accents only when MPD is built with ICU.
 - MPD announces itself over mDNS only on some systems, and Gladys relays no
   `_mpd._tcp` discovery: the addresses are typed.
 - Gladys does not pass the volume of its "Talk on a speaker" action to
@@ -158,6 +188,11 @@ See [`CLAUDE.md`](CLAUDE.md) for the project rules.
   without mixer and of web radios.
 - The Sonos integration of the Gladys core, for the notification that puts
   the music back.
+- `src/artwork-resize.js` comes from
+  [gladys-mopidy](https://github.com/guim31/gladys-mopidy) (pure JavaScript
+  JPEG/PNG reduction); it encodes with
+  [jpeg-js](https://github.com/jpeg-js/jpeg-js) (BSD-3-Clause), the only
+  runtime dependency beside the Gladys SDK.
 - The architecture and the conformity tests follow
   [gladys-wled](https://github.com/guim31/gladys-wled) and
   [gladys-pihole](https://github.com/guim31/gladys-pihole).

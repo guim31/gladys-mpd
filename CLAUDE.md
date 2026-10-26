@@ -9,7 +9,8 @@ A Gladys Assistant **external integration**: a Node.js service (Node 22+, ESM,
 no build step) that runs in its own sandboxed Docker container and talks to
 Gladys through
 [`@gladysassistant/integration-sdk`](https://github.com/GladysAssistant/integration-sdk-js),
-its only runtime dependency. It started from the official JavaScript template.
+with `jpeg-js` (the encoder of `src/artwork-resize.js`) as its only other
+runtime dependency. It started from the official JavaScript template.
 
 ## Commands
 
@@ -35,11 +36,13 @@ pushing.
 index.js                          SDK wiring only: src/app.js registers the handlers before connect()
 src/app.js                        every SDK handler -> the hub (also used by the tests)
 src/hub.js                        players by slot, devices, states, transports, status, 30 s timer, commands, logs
-src/player.js                     one MPD player: connection in idle, reconnection, readings, commands, notifications
-src/mpd/connection.js             one TCP connection: request queue, idle cut short by noidle, timeouts
+src/player.js                     one MPD player: connection in idle, side connection (catalog, covers), readings, commands, notifications
+src/catalog.js                    Gladys 5.3 music panel: browse, search, play, queue, artwork (MediaItems)
+src/artwork-resize.js             self-contained (from gladys-mopidy): a cover the core refuses (> 300 KB) -> JPEG ≤ 400 px, pure JS
+src/mpd/connection.js             one TCP connection: request queue, idle cut short by noidle, binary chunks, timeouts
 src/mpd/protocol.js               command quoting, answer parsing, ACK -> MpdError with a kind
-src/mpd/model.js                  status / currentsong / listplaylists -> plain objects
-src/devices.js                    one device per player: music features + playlist select, names (4 languages)
+src/mpd/model.js                  status / currentsong / listings (lsinfo, find, list…) -> plain objects
+src/devices.js                    one device per player: music features (5.3 now playing) + playlist select, names
 src/scenes.js                     scene action handlers (manifest `scene_actions`)
 src/widgets.js                    dashboard widget `player` (manifest `widgets`)
 src/texts.js                      connection, error, report and action texts (4 languages)
@@ -263,12 +266,52 @@ code de ce dépôt. Compléter ce fichier quand un nouveau piège est découvert
   interdit `/` dans un nom de playlist.
 - **Identité** : emplacement de configuration (1 à 4), MPD n'a pas d'identifiant ; changer
   l'adresse d'un emplacement garde l'appareil.
-- **Pochette** : `albumart`/`readpicture` renvoient l'image brute par morceaux, souvent > 300 Ko
-  (limite du cœur) ; pas de redimensionnement sans bibliothèque d'image : pas de pochette.
+- **Lecteur Musique de Gladys 5.3 (1.1.0)** : `playback_state` (même id `playback-state`, passé en
+  inscriptible, max 2, 2 = arrêté) et les nouveaux types aux ids `${appareil}:${type}` publiés par
+  `publishNowPlaying` (un seul canal ; plus de heartbeat). **Pas de `mute`** : MPD n'en a pas ;
+  simuler par `setvol 0` ferait afficher 0 au volume (le contrat veut un muet indépendant du
+  volume) et perdrait le volume à retrouver à un redémarrage du conteneur ou si un autre client le
+  change. Un lecteur injoignable est publié IDLE (son morceau reste). Pendant une notification, la
+  répétition publiée est celle mise de côté (pas de clignotement).
+- **Seconde connexion** (`player.side()`, ouverte à la demande, fermée après 20 s) pour le
+  catalogue et les pochettes : la connexion en idle reste libre, et une réponse trop grosse ne
+  coupe que celle-là (MPD coupe un client au-delà de 8 Mo de sortie, l'intégration au-delà de
+  4 Mo de texte : `TOO_LARGE`, message « trop de données »).
+- **Catalogue vérifié sur un vrai MPD 0.24.5** : `lsinfo` de la racine liste aussi les playlists
+  enregistrées (écartées des Dossiers) ; `list artist` rend une ligne vide (fichiers sans tag) ;
+  `list album group albumartist` donne la ligne `AlbumArtist` **avant** ses albums et se rabat
+  sur Artist, comme `find albumartist` ; l'ancienne syntaxe `TAG VALEUR` marche encore en 0.24 ;
+  `playlistinfo a:b` répond ACK 2 « Bad song index » quand `a` ≥ longueur ; `play n` hors file
+  aussi ; `addid uri pos` accepte une position absolue (ACK 2 au-delà de la longueur) et `+0`
+  (0.23+) ; `addid` d'un chemin inconnu : ACK 50 ; `seekcur` à l'arrêt : ACK 55 « Not playing »
+  (ignoré : un déplacement ne doit pas lancer la musique) ; `play` sans argument pendant la
+  lecture ne recommence pas le morceau. Une liste de commandes s'arrête à la première erreur,
+  `ACK [code@index]` donne l'index : on saute un morceau disparu (ACK 50) et on continue.
+  `search any` ignore la casse mais **pas les accents** sans ICU (Alpine) : `cafe` ne trouve pas
+  `Café`.
+- **Ids des MediaItems** : `song:<chemin ou URL>`, `dir:<chemin>`, `playlist:<nom>`,
+  `artist:<nom>`, `album:` + JSON `[albumartist|artist, nom, album]`, `gladys:<racine>`. Un id de
+  plus de 512 caractères : ligne neutre en navigation, `queue:<Id>` dans la file (jouée par
+  index). « Remplacer » ajoute d'abord en fin de file puis supprime l'ancienne plage et joue : un
+  id périmé ne vide rien.
+- **Pochettes** : `readpicture` (0.22+, image intégrée ; répond OK **sans** morceau binaire quand il
+  n'y en a pas) puis `albumart` (0.21+, fichier du dossier ; accepte un **dossier terminé par `/`**,
+  pas sans). Réponse `size`, `type`, `binary: n` puis n octets bruts : la connexion lit des Buffer
+  (lignes décodées en UTF-8 une à une). `binarylimit 1048576` (0.22.4+) sur la seconde connexion ;
+  sans lui, 8 Ko par morceau. La clé vient d'une pseudo-URL JSON
+  `["mpd", emplacement, adresse, source]` (adresse comprise : un autre lecteur dans l'emplacement n'hérite pas du cache du cœur).
+  L'état `artwork` n'est publié que si la recherche (2 s au plus, mémorisée 10 min par morceau)
+  trouve une image ; les listes donnent une clé sans vérifier (un refus montre l'icône). Réduction
+  par `artwork-resize.js` (copié de gladys-mopidy, autonome) ; copie réduite gardée par image
+  (taille + empreinte du premier morceau) : les 12 titres d'un album à image intégrée ne sont
+  réduits qu'une fois, et la suite de l'image n'est même pas relue.
 - **Faux Gladys** : `fake.transports` renvoie le format du fil (`device_external_id`), pas celui de
   `publishTransports` (`external_id`).
-- **Non vérifié sur un vrai MPD** : les fixtures `test/fixtures/mpd/` suivent la doc de MPD 0.23 ;
-  `scripts/probe.mjs` (lecture seule) les montre sur un vrai lecteur.
+- **Banc** (`~/gladys-dev/scratch-mpd`, hors dépôt) : image `alpine:3.22` + `apk add mpd`
+  (MPD 0.24.5), sortie `null` avec `mixer_type "software"`, bibliothèque générée par ffmpeg sur
+  l'hôte (`gen.sh`), script `check/check-music.mjs` (faux Gladys du SDK, aussi dans le conteneur
+  verrouillé). Les fixtures `test/fixtures/mpd/` suivent la doc de MPD 0.23 ; `scripts/probe.mjs`
+  (lecture seule) montre un vrai lecteur. Non vérifié : moOde, Volumio, MPD 0.21 à 0.23.
 
 ## Store
 

@@ -11,14 +11,20 @@
 // when the player was read less than half a period ago.
 // -----------------------------------------------------------------------------
 
-import { DEVICE_TRANSPORTS, createLogger } from '@gladysassistant/integration-sdk';
+import {
+  DEVICE_TRANSPORTS,
+  MUSIC_PLAYBACK_STATE,
+  MUSIC_REPEAT_MODE,
+  createLogger,
+} from '@gladysassistant/integration-sdk';
 import { formatAddress } from './config.js';
 import {
   FEATURE_KEYS,
   buildDevice,
   deviceIds,
   featureKeyOf,
-  featureStates,
+  nowPlaying,
+  nowPlayingIds,
   playerName,
   slotOf,
 } from './devices.js';
@@ -46,11 +52,15 @@ export const WIDGET_KEY = 'player';
 export const HUB_TIMINGS = {
   // The container's own reading of every player (and the ping).
   refreshMs: 30_000,
-  // An unchanged state is sent again this often, so that Gladys never shows
-  // "no recent value" (after 48 h).
-  heartbeatMs: 6 * 60 * 60_000,
   // The core drops a widget refresh asked less than 10 s after the previous one.
   widgetNudgeMs: 10_000,
+};
+
+// music/repeat values -> the repeat modes of the player.
+const REPEAT_KEYS = {
+  [MUSIC_REPEAT_MODE.OFF]: 'off',
+  [MUSIC_REPEAT_MODE.ALL]: 'all',
+  [MUSIC_REPEAT_MODE.ONE]: 'one',
 };
 
 const signature = (server) => JSON.stringify([server.host, server.port, server.password]);
@@ -82,6 +92,8 @@ export class MpdHub {
     this.lastNudge = -Infinity;
     this.stopped = false;
     this.issues = createIssueLog(logger);
+    /** Resized artworks by image (src/catalog.js), shared by every player. */
+    this.preparedArtworks = new Map();
   }
 
   // --- Lifecycle -------------------------------------------------------------
@@ -154,10 +166,12 @@ export class MpdHub {
     });
     player.on('failed', (err) => {
       this.issues.fail(key, `${this.label(record)}: ${safeText(err.message)}`);
+      this.publishStates(record).catch(() => {});
       this.onPlayerChange(record);
     });
     player.on('disconnected', (err) => {
       this.issues.fail(key, `${this.label(record)}: connection lost (${safeText(err.message)})`);
+      this.publishStates(record).catch(() => {});
       this.onPlayerChange(record);
     });
     player.on('update', () => this.onUpdate(record));
@@ -305,17 +319,48 @@ export class MpdHub {
     ]);
   }
 
+  /**
+   * The music features of a player, through publishNowPlaying: diffed by the
+   * SDK, the position sent only on a change of state or song, or a seek
+   * (Gladys extrapolates it). A player that no longer answers is shown
+   * stopped (its last song stays), never playing forever.
+   */
   async publishStates(record) {
-    if (!record.player.status || !this.isCreated(record.server.slot)) {
+    const { player } = record;
+    if (!player.status || !this.isCreated(record.server.slot)) {
       return;
     }
-    const states = featureStates(this.gladys, record.server.slot, record.player.status);
+    const { slot } = record.server;
+    const snapshot = player.connected
+      ? nowPlaying(player.status, player.song, {
+          artworkUrl: this.artworkUrl(record, player.artwork),
+          // During a notification, the modes it put aside.
+          repeat: repeatMode(player.notification?.saved ?? player.status),
+        })
+      : { playback_state: MUSIC_PLAYBACK_STATE.IDLE, position: 0 };
     try {
-      await this.gladys.publishChangedStates(states, { heartbeat: this.timings.heartbeatMs });
+      await this.gladys.publishNowPlaying(deviceIds(this.gladys, slot).device, snapshot, {
+        featureExternalIds: nowPlayingIds(this.gladys, slot),
+      });
       this.issues.ok('states', 'States accepted by Gladys again');
     } catch (err) {
       this.issues.fail('states', `States of ${this.label(record)} refused: ${err.message}`);
     }
+  }
+
+  /**
+   * The source of an artwork as given to artworkKey: what onMusicGetArtwork
+   * reads back (src/catalog.js). The address is in it, so another player in
+   * the same slot never gets the cached image of the previous one.
+   * @param {object} record
+   * @param {{ command: string, uri: string }|null} source
+   * @returns {string|null}
+   */
+  artworkUrl(record, source) {
+    if (!source) {
+      return null;
+    }
+    return JSON.stringify(['mpd', record.server.slot, formatAddress(record.server), source]);
   }
 
   async afterChanges() {
@@ -472,9 +517,10 @@ export class MpdHub {
    * @param {object} record
    * @param {string} what for the log line
    * @param {(player: Player) => Promise<any>} fn
+   * @param {{ quiet?: boolean }} [options] quiet: a reading (browse, search), logged at debug
    */
-  async command(record, what, fn) {
-    logger.info(`${this.label(record)}: ${what}`);
+  async command(record, what, fn, { quiet = false } = {}) {
+    logger[quiet ? 'debug' : 'info'](`${this.label(record)}: ${what}`);
     try {
       return await fn(record.player);
     } catch (err) {
@@ -483,16 +529,22 @@ export class MpdHub {
       }
       if (err instanceof MpdError) {
         logger.warn(`${this.label(record)}: ${what} failed (${safeText(err.message)})`);
-        throw new UserError(
-          err.kind === ERROR_KINDS.COMMAND ? ACTION_TEXT.refused : ACTION_TEXT.unreachable,
-          this.language,
-        );
+        let text = ACTION_TEXT.unreachable;
+        if (err.kind === ERROR_KINDS.TOO_LARGE) {
+          text = ACTION_TEXT.tooLarge;
+        } else if (err.kind === ERROR_KINDS.COMMAND) {
+          text = ACTION_TEXT.refused;
+        }
+        throw new UserError(text, this.language);
       }
       throw err;
     }
   }
 
-  /** A feature of a device: play, pause, previous, next, volume, playlist, notification. */
+  /**
+   * A feature of a device: play, pause, previous, next, volume, playback
+   * state, position, shuffle, repeat, playlist, notification.
+   */
   async setValue(device, feature, value) {
     const record = this.recordOf(device.external_id);
     const key = featureKeyOf(this.gladys, record.server.slot, feature.external_id);
@@ -507,6 +559,21 @@ export class MpdHub {
         return this.command(record, 'previous track', (player) => player.previous());
       case FEATURE_KEYS.VOLUME:
         return this.setVolume(record, value);
+      case FEATURE_KEYS.PLAYBACK_STATE:
+        return this.setPlaybackState(record, value);
+      case FEATURE_KEYS.POSITION:
+        return this.seek(record, value);
+      case FEATURE_KEYS.SHUFFLE:
+        return this.command(record, Number(value) === 1 ? 'shuffle on' : 'shuffle off', (player) =>
+          player.setRandom(Number(value) === 1),
+        );
+      case FEATURE_KEYS.REPEAT: {
+        const mode = REPEAT_KEYS[Number(value)];
+        if (!mode) {
+          throw new Error(`Invalid repeat mode ${value}`);
+        }
+        return this.command(record, `repeat ${mode}`, (player) => player.setRepeat(mode));
+      }
       case FEATURE_KEYS.PLAYLIST:
         await this.playPlaylist(record, value);
         return undefined;
@@ -517,6 +584,29 @@ export class MpdHub {
       default:
         throw new Error(`Feature ${feature.external_id} cannot be controlled`);
     }
+  }
+
+  /** Writing music/playback_state (Gladys 5.3): 0 pause, 1 play, 2 stop. */
+  async setPlaybackState(record, value) {
+    switch (Number(value)) {
+      case MUSIC_PLAYBACK_STATE.PAUSED:
+        return this.command(record, 'pause', (player) => player.pause());
+      case MUSIC_PLAYBACK_STATE.PLAYING:
+        return this.command(record, 'play', (player) => player.play());
+      case MUSIC_PLAYBACK_STATE.IDLE:
+        return this.command(record, 'stop', (player) => player.stopPlayback());
+      default:
+        throw new Error(`Invalid playback state ${value}`);
+    }
+  }
+
+  /** Writing music/position (Gladys 5.3): a seek, in seconds. */
+  async seek(record, value) {
+    const seconds = Number(value);
+    if (!Number.isFinite(seconds) || seconds < 0) {
+      throw new Error(`Invalid position ${value}`);
+    }
+    return this.command(record, `seek ${Math.round(seconds)} s`, (player) => player.seek(seconds));
   }
 
   async setVolume(record, value) {

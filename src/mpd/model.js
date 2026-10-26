@@ -12,7 +12,7 @@
 //   - a tag may repeat (two `Artist` lines).
 // -----------------------------------------------------------------------------
 
-import { parseList, parseObject } from './protocol.js';
+import { parseObject, parsePairs } from './protocol.js';
 
 /** Playback states of MPD. */
 export const STATES = Object.freeze({ PLAY: 'play', PAUSE: 'pause', STOP: 'stop' });
@@ -89,8 +89,76 @@ export function parseSong(lines) {
     name: tag(raw.Name),
     id: toInt(raw.Id),
     position: toInt(raw.Pos),
+    duration: toFloat(raw.duration) ?? toFloat(raw.Time),
   };
 }
+
+/**
+ * The entries of a listing: songs (`file`), and for `lsinfo` also
+ * directories and playlists, in the order MPD gives them.
+ * @param {string[]} lines answer of `playlistinfo`, `find`, `search`,
+ *   `lsinfo`, `listplaylistinfo`, `listplaylist`
+ * @returns {Array<{ kind: 'file'|'directory'|'playlist', path: string, song?: object }>}
+ */
+export function parseEntries(lines) {
+  const entries = [];
+  let current = null;
+  const close = () => {
+    if (current?.kind === 'file') {
+      current.song = parseSong(current.lines);
+    }
+    delete current?.lines;
+  };
+  for (const [key, value] of parsePairs(lines)) {
+    if (key === 'file' || key === 'directory' || key === 'playlist') {
+      close();
+      current = { kind: key, path: value, lines: [`${key}: ${value}`] };
+      entries.push(current);
+    } else if (current) {
+      current.lines.push(`${key}: ${value}`);
+    }
+  }
+  close();
+  return entries;
+}
+
+/**
+ * The values of one tag (`list artist`), blanks left out, sorted by name.
+ * @param {string[]} lines
+ * @param {string} key the tag as MPD writes it (`Artist`)
+ */
+export function parseTagList(lines, key) {
+  const seen = new Set();
+  for (const [name, value] of parsePairs(lines)) {
+    if (name === key && value.trim() !== '') {
+      seen.add(value);
+    }
+  }
+  return [...seen].sort(byName);
+}
+
+/**
+ * The albums of `list album group albumartist`: each `AlbumArtist` line
+ * comes before the albums it groups. Albums without a name left out.
+ * @param {string[]} lines
+ * @returns {Array<{ album: string, artist: string }>} artist '' when unknown
+ */
+export function parseAlbums(lines) {
+  const albums = [];
+  let artist = '';
+  for (const [key, value] of parsePairs(lines)) {
+    if (key === 'AlbumArtist') {
+      artist = value;
+    } else if (key === 'Album' && value.trim() !== '') {
+      albums.push({ album: value, artist });
+    }
+  }
+  return albums.sort((a, b) => byName(a.album, b.album) || byName(a.artist, b.artist));
+}
+
+/** Names in the order a user expects (case and accents aside, numbers as numbers). */
+export const byName = (a, b) =>
+  a.localeCompare(b, undefined, { sensitivity: 'base', numeric: true });
 
 /**
  * The stored playlists, sorted by name (the order MPD gives is its storage
@@ -99,10 +167,10 @@ export function parseSong(lines) {
  * @returns {string[]}
  */
 export function parsePlaylists(lines) {
-  return parseList(lines, 'playlist')
-    .map((item) => item.playlist)
-    .filter((name) => typeof name === 'string' && name.trim() !== '')
-    .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base', numeric: true }));
+  return parsePairs(lines)
+    .filter(([key, name]) => key === 'playlist' && name.trim() !== '')
+    .map(([, name]) => name)
+    .sort(byName);
 }
 
 /** The last part of a path or URL: what is shown for a song without tags. */

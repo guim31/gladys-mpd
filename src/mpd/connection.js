@@ -37,9 +37,18 @@ export const CONNECTION_TIMINGS = {
 // container (256 MB) from a peer that is not MPD and never sends a newline.
 const MAX_BUFFER = 1_000_000;
 
+// Largest answer accepted (characters of its lines): a library listing of a
+// huge folder or a broad search. MPD itself drops a client past 8 MB of
+// output by default; past this, the connection is closed with TOO_LARGE.
+export const MAX_ANSWER_CHARS = 4_000_000;
+
+// Largest binary chunk accepted (`albumart`, `readpicture`): the
+// `binarylimit` the player asks for is below it.
+export const MAX_BINARY_CHUNK = 1_048_576;
+
 /**
  * @typedef {object} Request
- * @property {'greeting'|'command'|'list'|'idle'} type
+ * @property {'greeting'|'command'|'list'|'idle'|'binary'} type
  * @property {string} text what is written on the wire
  * @property {(value: any) => void} resolve
  * @property {(err: Error) => void} reject
@@ -47,6 +56,9 @@ const MAX_BUFFER = 1_000_000;
  * @property {string[][]} [results] list answers collected so far
  * @property {string} [label] command name, for the error messages
  * @property {NodeJS.Timeout} [timer]
+ * @property {number} [size] characters received so far
+ * @property {number} [binaryLeft] bytes of a binary chunk still to read
+ * @property {Buffer|null} [data] the binary chunk
  */
 
 export class MpdConnection extends EventEmitter {
@@ -66,7 +78,8 @@ export class MpdConnection extends EventEmitter {
     this.timings = { ...CONNECTION_TIMINGS, ...timings };
     this.connectSocket = connect;
     this.socket = null;
-    this.buffer = '';
+    /** Bytes received and not read yet (lines are UTF-8, chunks binary). */
+    this.buffer = Buffer.alloc(0);
     /** @type {Request[]} */
     this.queue = [];
     this.noidleSent = false;
@@ -85,7 +98,6 @@ export class MpdConnection extends EventEmitter {
     });
     const socket = this.connectSocket({ host: this.host, port: this.port });
     this.socket = socket;
-    socket.setEncoding('utf8');
     socket.setNoDelay?.(true);
     // Notices a peer gone without a word (power cut) even while in idle.
     socket.setKeepAlive?.(true, 30_000);
@@ -130,6 +142,23 @@ export class MpdConnection extends EventEmitter {
       text: `command_list_ok_begin\n${body}\ncommand_list_end\n`,
       label: commands.map(([name]) => name).join('+'),
       results: [],
+    });
+  }
+
+  /**
+   * Run a command answering a binary chunk (`albumart`, `readpicture`):
+   * `size`, `type`, `binary: <n>`, then n raw bytes.
+   * @param {string} name
+   * @param {Array<string|number>} [args]
+   * @returns {Promise<{ lines: string[], data: Buffer|null }>} data null when
+   *   the answer has no chunk (`readpicture` of a file without a picture)
+   */
+  binary(name, args = []) {
+    return this.enqueue({
+      type: 'binary',
+      text: `${formatCommand(name, args)}\n`,
+      label: name,
+      data: null,
     });
   }
 
@@ -189,19 +218,29 @@ export class MpdConnection extends EventEmitter {
   }
 
   receive(chunk) {
-    this.buffer += chunk;
-    if (this.buffer.length > MAX_BUFFER) {
-      this.fail(new MpdError(ERROR_KINDS.NOT_MPD, 'answer too long, not an MPD server'));
-      return;
-    }
-    let at;
-    while ((at = this.buffer.indexOf('\n')) !== -1) {
-      const line = this.buffer.slice(0, at).replace(/\r$/, '');
-      this.buffer = this.buffer.slice(at + 1);
-      this.line(line);
-      if (this.closed) {
+    this.buffer = this.buffer.length === 0 ? chunk : Buffer.concat([this.buffer, chunk]);
+    while (!this.closed) {
+      const [head] = this.queue;
+      if (head?.binaryLeft !== undefined) {
+        // A binary chunk, then the newline that ends it.
+        if (this.buffer.length < head.binaryLeft + 1) {
+          return;
+        }
+        head.data = Buffer.from(this.buffer.subarray(0, head.binaryLeft));
+        this.buffer = this.buffer.subarray(head.binaryLeft + 1);
+        delete head.binaryLeft;
+        continue;
+      }
+      const at = this.buffer.indexOf(10);
+      if (at === -1) {
+        if (this.buffer.length > MAX_BUFFER) {
+          this.fail(new MpdError(ERROR_KINDS.NOT_MPD, 'answer too long, not an MPD server'));
+        }
         return;
       }
+      const line = this.buffer.toString('utf8', 0, at).replace(/\r$/, '');
+      this.buffer = this.buffer.subarray(at + 1);
+      this.line(line);
     }
   }
 
@@ -223,6 +262,8 @@ export class MpdConnection extends EventEmitter {
     if (line === 'OK') {
       if (head.type === 'list') {
         this.finish(head.results);
+      } else if (head.type === 'binary') {
+        this.finish({ lines: head.lines, data: head.data });
       } else if (head.type === 'idle') {
         this.finish(parseChanges(head.lines));
       } else {
@@ -238,6 +279,26 @@ export class MpdConnection extends EventEmitter {
       head.results.push(head.lines);
       head.lines = [];
       return;
+    }
+    head.size = (head.size ?? 0) + line.length + 1;
+    if (head.size > MAX_ANSWER_CHARS) {
+      this.fail(
+        new MpdError(ERROR_KINDS.TOO_LARGE, `answer to ${head.label} too large`, {
+          command: head.label,
+        }),
+      );
+      return;
+    }
+    if (head.type === 'binary') {
+      const match = /^binary: (\d+)$/.exec(line);
+      if (match) {
+        const length = Number(match[1]);
+        if (length > MAX_BINARY_CHUNK) {
+          this.fail(new MpdError(ERROR_KINDS.TOO_LARGE, `binary chunk of ${length} bytes`));
+          return;
+        }
+        head.binaryLeft = length;
+      }
     }
     head.lines.push(line);
   }

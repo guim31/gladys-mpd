@@ -7,7 +7,31 @@
 // (`finishSong()`), or makes an address fail.
 // -----------------------------------------------------------------------------
 
+import { readFileSync } from 'node:fs';
 import net from 'node:net';
+import jpeg from 'jpeg-js';
+
+// A cover of a few kilobytes, and one of about 1.5 MB (noise): above the
+// 300 KB Gladys accepts, made smaller by the integration.
+export const SMALL_JPEG = readFileSync(
+  new URL('../fixtures/artwork/baseline-420.jpg', import.meta.url),
+);
+export const HUGE_JPEG = (() => {
+  const width = 800;
+  const height = 600;
+  const data = Buffer.alloc(width * height * 4, 255);
+  let seed = 7;
+  for (let i = 0; i < data.length; i++) {
+    if (i % 4 !== 3) {
+      seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+      data[i] = 128 + (seed % 101) - 50;
+    }
+  }
+  return jpeg.encode({ data, width, height }, 100).data;
+})();
+
+// Cover files of folders (`albumart`), by folder path with its slash.
+export const COVERS = { 'Daft Punk/Discovery/': SMALL_JPEG };
 
 export const LIBRARY = {
   'Daft Punk/Discovery/01 One More Time.flac': {
@@ -30,6 +54,8 @@ export const LIBRARY = {
     Title: 'La femme d’argent',
     Track: '1',
     duration: 429.4,
+    // An embedded picture (`readpicture`).
+    picture: HUGE_JPEG,
   },
   'Untagged/track07.mp3': { duration: 180 },
   'sounds/doorbell.mp3': { Title: 'Doorbell', duration: 2.5 },
@@ -179,6 +205,7 @@ export class FakeMpd {
       idle: null,
       pending: new Set(),
       list: null,
+      binarylimit: 8192,
     };
     this.clients.add(client);
     socket.setEncoding('utf8');
@@ -249,6 +276,12 @@ export class FakeMpd {
     }
     try {
       const out = this.run(client, name, args);
+      if (Buffer.isBuffer(out)) {
+        if (!client.socket.destroyed) {
+          client.socket.write(Buffer.concat([out, Buffer.from('OK\n')]));
+        }
+        return;
+      }
       this.write(client, `${out}OK\n`);
     } catch (err) {
       this.write(client, this.ack(err, 0, name));
@@ -323,10 +356,11 @@ export class FakeMpd {
     if (!client.authenticated) {
       throw new Ack(4, `you don't have permission for "${name}"`);
     }
-    const handler = this.commands[name];
-    if (!handler) {
+    const handler = this.extraCommands?.[name] ?? this.commands[name];
+    if (!handler || this.missing?.includes(name)) {
       throw new Ack(5, `unknown command "${name}"`);
     }
+    this.client = client;
     return handler.call(this, ...args) ?? '';
   }
 
@@ -434,10 +468,136 @@ export class FakeMpd {
         this.append(uri);
         this.queueChanged();
       },
-      addid: (uri) => {
+      addid: (uri, position) => {
+        if (position !== undefined && Number(position) > this.queue.length) {
+          throw new Ack(2, `Number too large: ${position}`);
+        }
         const song = this.append(uri);
+        if (position !== undefined) {
+          this.queue.splice(this.queue.indexOf(song), 1);
+          this.queue.splice(Number(position), 0, song);
+          if (this.current >= Number(position)) {
+            this.current += 1;
+          }
+        }
         this.queueChanged();
         return `Id: ${song.id}\n`;
+      },
+      delete: (range) => {
+        const [start, end = String(Number(start) + 1)] = range.split(':');
+        if (Number(start) >= this.queue.length) {
+          throw new Ack(2, 'Bad song index');
+        }
+        const removed = this.queue.slice(Number(start), Number(end)).map((song) => song.id);
+        for (const id of removed) {
+          this.commands.deleteid(String(id));
+        }
+      },
+      seekcur: (time) => {
+        if (this.state === 'stop') {
+          throw new Ack(55, 'Not playing');
+        }
+        this.elapsed = Number(time);
+        this.emit('player');
+      },
+      playlistinfo: (range) => {
+        const [start, end] = (range ?? `0:${this.queue.length}`).split(':').map(Number);
+        if (start >= this.queue.length && range !== undefined) {
+          throw new Ack(2, 'Bad song index');
+        }
+        return this.queue
+          .slice(start, end)
+          .map((song, index) => this.songText(song, start + index))
+          .join('');
+      },
+      binarylimit: (size) => {
+        this.client.binarylimit = Number(size);
+      },
+      readpicture: (uri, offset) => {
+        const tags = LIBRARY[uri];
+        if (!tags) {
+          throw new Ack(50, 'No such song');
+        }
+        return tags.picture ? this.chunk(tags.picture, offset) : '';
+      },
+      albumart: (uri, offset) => {
+        const folder = uri.endsWith('/') ? uri : uri.slice(0, uri.lastIndexOf('/') + 1);
+        const cover = COVERS[folder];
+        if (!cover) {
+          throw new Ack(50, 'No file exists');
+        }
+        return this.chunk(cover, offset);
+      },
+      lsinfo: (path = '') => {
+        const prefix = path ? `${path}/` : '';
+        const dirs = new Set();
+        const files = [];
+        for (const file of Object.keys(LIBRARY)) {
+          if (!file.startsWith(prefix)) {
+            continue;
+          }
+          const rest = file.slice(prefix.length);
+          if (rest.includes('/')) {
+            dirs.add(prefix + rest.slice(0, rest.indexOf('/')));
+          } else {
+            files.push(file);
+          }
+        }
+        if (path && dirs.size === 0 && files.length === 0) {
+          throw new Ack(50, 'No such directory');
+        }
+        const playlists = path ? [] : Object.keys(this.playlists);
+        return [
+          ...[...dirs].map((dir) => `directory: ${dir}\n`),
+          ...files.map((file) => this.libraryText(file)),
+          ...playlists.map((name) => `playlist: ${name}\n`),
+        ].join('');
+      },
+      list: (type, ...rest) => {
+        const songs = Object.entries(LIBRARY);
+        if (type === 'artist') {
+          return [...new Set(songs.map(([, tags]) => tags.Artist ?? ''))]
+            .map((artist) => `Artist: ${artist}\n`)
+            .join('');
+        }
+        if (type === 'album' && rest[0] === 'group') {
+          const pairs = new Set(
+            songs.map(([, tags]) => `${tags.Artist ?? ''}\u0000${tags.Album ?? ''}`),
+          );
+          return [...pairs]
+            .map((pair) => pair.split('\u0000'))
+            .map(([artist, album]) => `AlbumArtist: ${artist}\nAlbum: ${album}\n`)
+            .join('');
+        }
+        if (type === 'album' && rest[0] === 'artist') {
+          return [
+            ...new Set(
+              songs
+                .filter(([, tags]) => tags.Artist === rest[1])
+                .map(([, tags]) => tags.Album ?? ''),
+            ),
+          ]
+            .map((album) => `Album: ${album}\n`)
+            .join('');
+        }
+        throw new Ack(2, 'unsupported list in the fake');
+      },
+      find: (...args) => this.lookup(args, (value, wanted) => value === wanted),
+      search: (...args) =>
+        this.lookup(args, (value, wanted) => value.toLowerCase().includes(wanted.toLowerCase())),
+      listplaylist: (name) => {
+        const files = this.playlists[name];
+        if (!files) {
+          throw new Ack(50, 'No such playlist');
+        }
+        return files.map((file) => `file: ${file}\n`).join('');
+      },
+      listplaylistinfo: (name) => {
+        const files = this.playlists[name];
+        if (!files) {
+          throw new Ack(50, 'No such playlist');
+        }
+        return files.map((file) => this.libraryText(file)).join('');
       },
       deleteid: (id) => {
         const index = this.indexOf(id);
@@ -478,6 +638,57 @@ export class FakeMpd {
         this.emit('stored_playlist');
       },
     };
+  }
+
+  /** `find` / `search`: TAG VALUE pairs, then `window START:END`. */
+  lookup(args, match) {
+    let window = [0, Infinity];
+    const filters = [];
+    for (let at = 0; at < args.length; at += 2) {
+      if (args[at] === 'window') {
+        window = args[at + 1].split(':').map(Number);
+      } else {
+        filters.push([args[at], args[at + 1]]);
+      }
+    }
+    const value = (file, tags, type) => {
+      switch (type) {
+        case 'base':
+          return file;
+        case 'any':
+          return [file, tags.Title, tags.Artist, tags.Album].filter(Boolean).join(' ');
+        case 'albumartist':
+          return tags.AlbumArtist ?? tags.Artist ?? '';
+        default:
+          return tags[type[0].toUpperCase() + type.slice(1)] ?? '';
+      }
+    };
+    return Object.entries(LIBRARY)
+      .filter(([file, tags]) =>
+        filters.every(([type, wanted]) =>
+          type === 'base' ? file.startsWith(`${wanted}/`) : match(value(file, tags, type), wanted),
+        ),
+      )
+      .slice(window[0], window[1])
+      .map(([file]) => this.libraryText(file))
+      .join('');
+  }
+
+  /** A binary answer: one chunk of `binarylimit` bytes at most from `offset`. */
+  chunk(data, offset) {
+    const start = Number(offset);
+    const part = data.subarray(start, start + this.client.binarylimit);
+    return Buffer.concat([
+      Buffer.from(`size: ${data.length}\ntype: image/jpeg\nbinary: ${part.length}\n`),
+      part,
+      Buffer.from('\n'),
+    ]);
+  }
+
+  /** A song of the library as `find` and `lsinfo` give it. */
+  libraryText(file) {
+    const song = { file, ...LIBRARY[file] };
+    return this.songText(song, null);
   }
 
   indexOf(id) {
@@ -647,7 +858,9 @@ export class FakeMpd {
     if (song.duration !== undefined) {
       lines.push(`Time: ${Math.round(song.duration)}`, `duration: ${song.duration.toFixed(3)}`);
     }
-    lines.push(`Pos: ${position}`, `Id: ${song.id}`);
+    if (position !== null) {
+      lines.push(`Pos: ${position}`, `Id: ${song.id}`);
+    }
     return `${lines.join('\n')}\n`;
   }
 }

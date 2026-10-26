@@ -12,13 +12,19 @@
 //   - `disconnected` an open connection was lost (err);
 //   - `update`       a new reading of status, current song or playlists;
 //   - `notification` a notification ended ({ reason, error }).
+//
+// A second, short-lived connection (`side()`) serves what may be long or
+// large: the catalog of the Gladys 5.3 music panel and the artworks (binary
+// chunks). The connection in idle stays free for the commands, and an answer
+// MPD finds too large only closes the side one.
 // -----------------------------------------------------------------------------
 
+import { createHash } from 'node:crypto';
 import { EventEmitter } from 'node:events';
 import { createLogger } from '@gladysassistant/integration-sdk';
 import { MpdConnection } from './mpd/connection.js';
 import { ACK, ERROR_KINDS, MpdError, parsePairs } from './mpd/protocol.js';
-import { STATES, parsePlaylists, parseSong, parseStatus } from './mpd/model.js';
+import { STATES, isStream, parsePlaylists, parseSong, parseStatus } from './mpd/model.js';
 
 const logger = createLogger({ name: 'mpd-player' });
 
@@ -34,7 +40,26 @@ export const PLAYER_TIMINGS = {
   // How long a scene action waits for its address to start playing.
   startTimeoutMs: 10_000,
   startCheckMs: 500,
+  // How long a reading waits for the artwork lookup of a new song: past it,
+  // the song is shown without, and the next reading asks again.
+  artworkTimeoutMs: 2_000,
+  // The side connection (catalog, artworks) is closed after this long unused.
+  sideIdleMs: 20_000,
+  // How long a song's artwork lookup is remembered.
+  artworkCacheMs: 10 * 60_000,
 };
+
+// What a catalog command may queue at most (an album, an artist, a folder,
+// a playlist): a folder may hold the whole library.
+export const MAX_QUEUED_SONGS = 500;
+
+// Bytes asked per binary chunk (`binarylimit`, MPD ≥ 0.22.4; 8 KB before):
+// a cover of a few megabytes comes in a few round trips.
+export const ARTWORK_CHUNK = 1_048_576;
+// A cover is read up to this size (then made smaller, artwork-resize.js).
+export const MAX_ARTWORK_BYTES = 10 * 1024 * 1024;
+
+const ARTWORK_LOOKUPS_KEPT = 500;
 
 // What the idle waits for: playback, volume, options, queue, stored playlists.
 const IDLE_SUBSYSTEMS = ['player', 'mixer', 'options', 'playlist', 'stored_playlist'];
@@ -112,6 +137,15 @@ export class Player extends EventEmitter {
     this.notification = null;
     /** The last notification being started (they start one after the other). */
     this.notifying = Promise.resolve();
+    /** The side connection (catalog, artworks), opened on demand. */
+    this.sideConn = null;
+    this.sideOpening = null;
+    this.sideTimer = null;
+    /** The artwork of the current song: the file it was looked up for, its source. */
+    this.artworkFor = null;
+    this.artwork = null;
+    /** Artwork lookups by song file: { source, at }. */
+    this.artworkLookups = new Map();
   }
 
   get connected() {
@@ -231,6 +265,88 @@ export class Player extends EventEmitter {
     const conn = this.conn;
     this.conn = null;
     conn?.close();
+    this.closeSide();
+  }
+
+  // --- Side connection -------------------------------------------------------
+
+  /**
+   * The side connection, opened when needed (with the password), closed
+   * after sideIdleMs unused. Refused at once while the player is offline.
+   * @returns {Promise<MpdConnection>}
+   */
+  async side() {
+    this.requireConnection();
+    clearTimeout(this.sideTimer);
+    if (this.sideConn && !this.sideConn.closed) {
+      this.armSideTimer();
+      return this.sideConn;
+    }
+    this.sideOpening ??= this.openSide().finally(() => {
+      this.sideOpening = null;
+    });
+    const conn = await this.sideOpening;
+    this.armSideTimer();
+    return conn;
+  }
+
+  async openSide() {
+    const conn = new MpdConnection({
+      host: this.server.host,
+      port: this.server.port,
+      password: this.server.password,
+      timings: this.connectionTimings,
+      connect: this.connectSocket,
+    });
+    conn.on('close', () => {
+      if (this.sideConn === conn) {
+        this.sideConn = null;
+      }
+    });
+    try {
+      await conn.open();
+      // Bigger binary chunks (MPD ≥ 0.22.4); older servers send 8 KB ones.
+      await conn.command('binarylimit', [ARTWORK_CHUNK]).catch((err) => {
+        if (err.kind === ERROR_KINDS.UNREACHABLE) {
+          throw err;
+        }
+      });
+    } catch (err) {
+      conn.close();
+      throw asMpdError(err);
+    }
+    if (this.stopped) {
+      conn.close();
+      throw new MpdError(ERROR_KINDS.UNREACHABLE, 'stopped');
+    }
+    this.sideConn = conn;
+    return conn;
+  }
+
+  armSideTimer() {
+    clearTimeout(this.sideTimer);
+    if (this.timers) {
+      this.sideTimer = setTimeout(() => this.closeSide(), this.timings.sideIdleMs);
+      this.sideTimer.unref?.();
+    }
+  }
+
+  closeSide() {
+    clearTimeout(this.sideTimer);
+    const conn = this.sideConn;
+    this.sideConn = null;
+    conn?.close();
+  }
+
+  /**
+   * One read-only command on the side connection (catalog).
+   * @param {string} name
+   * @param {Array<string|number>} [args]
+   * @returns {Promise<string[]>}
+   */
+  async query(name, args = []) {
+    const conn = await this.side();
+    return conn.command(name, args);
   }
 
   async idleLoop(conn) {
@@ -326,8 +442,18 @@ export class Player extends EventEmitter {
         playlists = null;
       }
     }
+    const song = parseSong(songLines);
+    const file = song?.file ?? null;
+    if (file !== this.artworkFor) {
+      // Once per song, awaited so that a song change is one batch of
+      // states, but briefly: a command waits for this reading.
+      const found = await this.lookupArtwork(file, { timeoutMs: this.timings.artworkTimeoutMs });
+      this.artwork = found.source;
+      // Not read (error, timeout): asked again at the next reading.
+      this.artworkFor = found.failed ? null : file;
+    }
     this.status = parseStatus(statusLines);
-    this.song = parseSong(songLines);
+    this.song = song;
     this.playlists = playlists;
     this.refreshedAt = this.now();
     this.emit('update');
@@ -398,6 +524,192 @@ export class Player extends EventEmitter {
       ['repeat', [repeat]],
       ['single', [single]],
     ]);
+  }
+
+  /**
+   * Seek in the current song (`seekcur`, MPD ≥ 0.17). Nothing while stopped:
+   * MPD answers "Not playing", and seeking must not start the music.
+   * @param {number} seconds
+   */
+  async seek(seconds) {
+    await this.refresh();
+    if (this.status?.state === STATES.STOP) {
+      return;
+    }
+    await this.run([['seekcur', [Math.max(0, seconds).toFixed(3)]]]);
+  }
+
+  /**
+   * Queue songs (Gladys 5.3 catalog): in place of the queue (`replace`, the
+   * old queue removed only once the new songs are in), after the current
+   * song (`next`) or at the end (`append`). A song MPD does not know (moved
+   * since a scene saved it) is skipped, like MPD's own `load` does.
+   * @param {string[]} uris
+   * @param {'replace'|'next'|'append'} mode
+   * @returns {Promise<number>} songs queued
+   */
+  async queueSongs(uris, mode) {
+    const conn = this.requireConnection();
+    if (mode === 'replace') {
+      this.endNotificationQuietly();
+    }
+    await this.refresh();
+    const length = this.status?.queueLength ?? 0;
+    const current = this.status?.song ?? null;
+    const at = mode === 'next' && current !== null ? current + 1 : length;
+    let added = 0;
+    let rest = uris.slice(0, MAX_QUEUED_SONGS);
+    while (rest.length > 0) {
+      const base = at + added;
+      try {
+        await conn.commandList(rest.map((uri, index) => ['addid', [uri, base + index]]));
+        added += rest.length;
+        rest = [];
+      } catch (err) {
+        if (err.kind !== ERROR_KINDS.COMMAND || !Number.isInteger(err.index)) {
+          throw err;
+        }
+        if (err.code !== ACK.NO_EXIST) {
+          if (mode === 'replace' && added + err.index > 0) {
+            // Put the queue back as it was.
+            await conn.command('delete', [`${length}:${length + added + err.index}`]);
+          }
+          throw err;
+        }
+        logger.debug(`Player ${this.server.slot}: skipped ${rest[err.index]} (${err.message})`);
+        added += err.index;
+        rest = rest.slice(err.index + 1);
+      }
+    }
+    if (mode === 'replace' && added > 0) {
+      const commands = length > 0 ? [['delete', [`0:${length}`]]] : [];
+      commands.push(['play', ['0']]);
+      await this.run(commands);
+    } else {
+      await this.refresh().catch(() => {});
+    }
+    return added;
+  }
+
+  /**
+   * Play the song at this position of the queue.
+   * @returns {Promise<boolean>} false when there is none
+   */
+  async playIndex(index) {
+    try {
+      await this.run([['play', [index]]]);
+      return true;
+    } catch (err) {
+      if (err.kind === ERROR_KINDS.COMMAND && err.code === ACK.ARG) {
+        return false;
+      }
+      throw err;
+    }
+  }
+
+  // --- Artworks ------------------------------------------------------------------
+
+  /**
+   * Where the artwork of a song is: its embedded picture (`readpicture`,
+   * MPD ≥ 0.22), else the cover file of its folder (`albumart`, MPD ≥ 0.21).
+   * Remembered a while per song. Never throws.
+   * @param {string|null} file
+   * @param {{ timeoutMs?: number }} [options]
+   * @returns {Promise<{ source: { command: string, uri: string }|null, failed?: boolean }>}
+   */
+  async lookupArtwork(file, { timeoutMs } = {}) {
+    if (!file || isStream(file)) {
+      return { source: null };
+    }
+    const known = this.artworkLookups.get(file);
+    if (known && this.now() - known.at < this.timings.artworkCacheMs) {
+      return { source: known.source };
+    }
+    let timer;
+    try {
+      const lookup = this.findArtwork(file);
+      lookup.catch(() => {}); // still running when the race is lost
+      const source = timeoutMs
+        ? await Promise.race([
+            lookup,
+            new Promise((resolve, reject) => {
+              timer = setTimeout(() => reject(new Error('timeout')), timeoutMs);
+              timer.unref?.();
+            }),
+          ])
+        : await lookup;
+      this.artworkLookups.delete(file);
+      this.artworkLookups.set(file, { source, at: this.now() });
+      if (this.artworkLookups.size > ARTWORK_LOOKUPS_KEPT) {
+        this.artworkLookups.delete(this.artworkLookups.keys().next().value);
+      }
+      return { source };
+    } catch (err) {
+      logger.debug(`Player ${this.server.slot}: artwork not looked up (${err.message})`);
+      return { source: null, failed: true };
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  async findArtwork(file) {
+    const conn = await this.side();
+    for (const [command, uri] of [
+      ['readpicture', file],
+      ['albumart', file],
+    ]) {
+      try {
+        const { data } = await conn.binary(command, [uri, 0]);
+        if (data && data.length > 0) {
+          // The cover file of a folder: one source (one key) for its songs.
+          return { command, uri: command === 'albumart' ? folderUri(file) : uri };
+        }
+      } catch (err) {
+        // 50: none (or not a song of the library); 5: unknown command (old MPD).
+        if (err.kind !== ERROR_KINDS.COMMAND) {
+          throw err;
+        }
+      }
+    }
+    return null;
+  }
+
+  /**
+   * The bytes of an artwork, chunk after chunk, up to MAX_ARTWORK_BYTES.
+   * @param {{ command: string, uri: string }} source
+   * @param {(id: string) => boolean} [known] stops after the first chunk when
+   *   it answers true (a resized copy of this image is kept)
+   * @returns {Promise<{ data: Buffer|null, id: string }>} id: what tells two
+   *   images apart (size and a hash of the first chunk); data null when known
+   */
+  async readArtwork({ command, uri }, known = () => false) {
+    const conn = await this.side();
+    const chunks = [];
+    let offset = 0;
+    let size = null;
+    let id = null;
+    do {
+      const { lines, data } = await conn.binary(command, [uri, offset]);
+      if (!data || data.length === 0) {
+        if (offset === 0) {
+          throw new MpdError(ERROR_KINDS.COMMAND, 'no artwork', { code: ACK.NO_EXIST });
+        }
+        break;
+      }
+      if (size === null) {
+        size = Number(parsePairs(lines).find(([key]) => key === 'size')?.[1]);
+        if (!Number.isFinite(size) || size > MAX_ARTWORK_BYTES) {
+          throw new MpdError(ERROR_KINDS.TOO_LARGE, `artwork of ${size} bytes`);
+        }
+        id = `${size}-${createHash('sha1').update(data).digest('hex').slice(0, 16)}`;
+        if (known(id)) {
+          return { data: null, id };
+        }
+      }
+      chunks.push(data);
+      offset += data.length;
+    } while (offset < size);
+    return { data: Buffer.concat(chunks), id };
   }
 
   /**
@@ -736,6 +1048,16 @@ export class Player extends EventEmitter {
     clearTimeout(notification.streamTimer);
     notification.settle(new MpdError(ERROR_KINDS.UNREACHABLE, 'connection lost'));
   }
+}
+
+/**
+ * The folder of a song as `albumart` takes it: its path with a trailing
+ * slash (MPD looks for the cover in the folder of the path it is given). A
+ * song at the root of the library is given as is.
+ */
+export function folderUri(file) {
+  const at = file.lastIndexOf('/');
+  return at === -1 ? file : file.slice(0, at + 1);
 }
 
 /** Any error as an MpdError with a kind. */
