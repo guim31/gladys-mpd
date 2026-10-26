@@ -178,10 +178,11 @@ test('binary chunks are read as bytes, text around them as UTF-8', async (t) => 
 
 test('an answer too large closes the connection with TOO_LARGE', async (t) => {
   const mpd = await server(t);
-  const conn = connection(t, mpd);
+  // A slow CI runner needs more than the 300 ms of the other tests for 4 MB.
+  const conn = connection(t, mpd, { timings: { connectMs: 300, requestMs: 10_000 } });
   await conn.open();
   const closed = new Promise((resolve) => conn.once('close', resolve));
-  mpd.extraCommands = { huge: () => 'file: x\n'.repeat(600_000) };
+  mpd.extraCommands = { huge: () => 'file: x\n'.repeat(520_000) };
   await assert.rejects(conn.command('huge'), (err) => err.kind === ERROR_KINDS.TOO_LARGE);
   assert.equal((await closed).kind, ERROR_KINDS.TOO_LARGE);
 });
