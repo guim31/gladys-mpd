@@ -10,6 +10,8 @@ the notes of the version's GitHub Release.
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-10-26
+
 ### Added
 
 - The Gladys 5.3 music player: the **Music** box of the dashboard shows the
@@ -61,5 +63,6 @@ the notes of the version's GitHub Release.
 - Every text in English, French, German and Spanish; feature names in French
   by default.
 
-[Unreleased]: https://github.com/guim31/gladys-mpd/compare/v1.0.1...HEAD
+[Unreleased]: https://github.com/guim31/gladys-mpd/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/guim31/gladys-mpd/compare/v1.0.1...v1.1.0
 [1.0.1]: https://github.com/guim31/gladys-mpd/releases/tag/v1.0.1
